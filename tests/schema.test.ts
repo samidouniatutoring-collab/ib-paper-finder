@@ -1,0 +1,75 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+
+const sql = readFileSync(new URL("../supabase/schema.sql", import.meta.url), "utf8").toLowerCase();
+const policies = sql.split(";").filter((s) => s.includes("create policy"));
+const LIBRARY = ["public.papers", "public.questions", "public.question_tags", "storage.objects"];
+
+describe("schema.sql access rules", () => {
+  it("sets the owner email on line 2", () => {
+    expect(sql.split("\n")[1]).toContain("samidouniatutoring@gmail.com");
+  });
+
+  it("has no public or anonymous read policy on library data or the papers bucket", () => {
+    for (const p of policies.filter((p) => LIBRARY.some((t) => p.includes(` on ${t} `)))) {
+      expect(p).not.toMatch(/\bto (anon|public)\b/);
+      expect(p).toMatch(/\bto authenticated\b/);
+      expect(p).toMatch(/is_approved\(\)|is_owner\(\)/);
+      expect(p).not.toMatch(/using \(true\)/);
+    }
+  });
+
+  it("only the owner can write library data", () => {
+    const writes = policies.filter(
+      (p) => LIBRARY.some((t) => p.includes(` on ${t} `)) && /for (all|insert|update|delete)/.test(p),
+    );
+    expect(writes.length).toBeGreaterThanOrEqual(6);
+    for (const p of writes) expect(p).toContain("is_owner()");
+  });
+
+  it("keeps the papers bucket private and enables RLS everywhere", () => {
+    expect(sql).toMatch(/insert into storage\.buckets[^;]*'papers', false\)/);
+    expect(sql).not.toMatch(/public\s*=\s*true/);
+    expect(sql).not.toContain("getpublicurl");
+    for (const t of ["profiles", "app_settings", "papers", "questions", "question_tags", "progress"]) {
+      expect(sql).toContain(`alter table public.${t} enable row level security`);
+    }
+  });
+});
+
+describe("schema.sql homework rules", () => {
+  const HW = ["student_groups", "student_group_members", "homework_sets", "homework_items", "homework_assignments", "homework_answers"];
+  it("enables RLS and has no anonymous or open policy on homework tables", () => {
+    for (const t of HW) expect(sql).toContain(`alter table public.${t} enable row level security`);
+    for (const p of policies.filter((p) => HW.some((t) => p.includes(` on public.${t} `)))) {
+      expect(p).toMatch(/\bto authenticated\b/);
+      expect(p).not.toMatch(/using \(true\)/);
+      expect(p).toMatch(/is_owner\(\)|is_assigned\(|is_approved\(\)/);
+    }
+  });
+  it("students only write their own answers on sets assigned to them", () => {
+    const p = policies.find((p) => p.includes('"hw answers: own rows"'))!;
+    expect(p).toContain("user_id = auth.uid()");
+    expect(p).toContain("is_assigned(set_id)");
+  });
+});
+
+describe("schema.sql search", () => {
+  it("search runs with the caller's rights (RLS applies) and is not open to anon", () => {
+    const fn = sql.slice(sql.indexOf("create or replace function public.search_questions"));
+    expect(fn.slice(0, fn.indexOf("$$"))).toContain("security invoker");
+    expect(sql).toMatch(/revoke all on function public\.search_questions[^;]*from public, anon/);
+    expect(sql).toContain("to_tsvector('english', body)");
+    expect(sql).toContain("to_tsvector('simple', body)");
+  });
+});
+
+describe("schema.sql markscheme ranges", () => {
+  it("only approved users read and only the owner writes", () => {
+    expect(sql).toContain("alter table public.markscheme_ranges enable row level security");
+    const ps = policies.filter((p) => p.includes(" on public.markscheme_ranges "));
+    expect(ps).toHaveLength(2);
+    for (const p of ps) expect(p).toMatch(/is_approved\(\)|is_owner\(\)/);
+    expect(ps.find((p) => p.includes("for all"))).toContain("is_owner()");
+  });
+});

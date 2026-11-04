@@ -1,0 +1,715 @@
+{
+ "subject": "business",
+ "note": "Edit freely. keywords are matched case- and accent-insensitively. Optional: papers (only tag on these paper numbers), level, marks [min,max] (tag by marks instead of keywords).",
+ "topics": [
+  {
+   "code": "1.1",
+   "name": "Introduction to business management",
+   "group": "Unit 1: Introduction to business management",
+   "keywords": [
+    "entrepreneur",
+    "entrepreneurship",
+    "sector",
+    "primary sector",
+    "secondary sector",
+    "tertiary sector",
+    "quaternary",
+    "intrapreneur",
+    "start-up",
+    "business functions"
+   ]
+  },
+  {
+   "code": "1.2",
+   "name": "Types of business entities",
+   "group": "Unit 1: Introduction to business management",
+   "keywords": [
+    "sole trader",
+    "partnership",
+    "privately held company",
+    "publicly held company",
+    "social enterprise",
+    "cooperative",
+    "non-profit",
+    "ngo",
+    "for-profit",
+    "limited liability"
+   ]
+  },
+  {
+   "code": "1.3",
+   "name": "Business objectives",
+   "group": "Unit 1: Introduction to business management",
+   "keywords": [
+    "vision statement",
+    "mission statement",
+    "aims",
+    "objectives",
+    "strategic",
+    "tactical",
+    "operational",
+    "corporate social responsibility",
+    "csr",
+    "ethical objectives"
+   ]
+  },
+  {
+   "code": "1.4",
+   "name": "Stakeholders",
+   "group": "Unit 1: Introduction to business management",
+   "keywords": [
+    "stakeholder",
+    "stakeholders",
+    "shareholders",
+    "pressure group",
+    "stakeholder conflict",
+    "stakeholder mapping"
+   ]
+  },
+  {
+   "code": "1.5",
+   "name": "Growth and evolution",
+   "group": "Unit 1: Introduction to business management",
+   "keywords": [
+    "economies of scale",
+    "diseconomies of scale",
+    "merger",
+    "acquisition",
+    "takeover",
+    "joint venture",
+    "strategic alliance",
+    "franchise",
+    "franchising",
+    "internal growth",
+    "external growth",
+    "organic growth"
+   ]
+  },
+  {
+   "code": "1.6",
+   "name": "Multinational companies",
+   "group": "Unit 1: Introduction to business management",
+   "keywords": [
+    "multinational",
+    "mnc",
+    "mncs",
+    "host country",
+    "globalization",
+    "globalisation"
+   ]
+  },
+  {
+   "code": "2.1",
+   "name": "Introduction to human resource management",
+   "group": "Unit 2: Human resource management",
+   "keywords": [
+    "workforce planning",
+    "recruitment",
+    "labour turnover",
+    "induction",
+    "training",
+    "dismissal",
+    "redundancy",
+    "flexible working",
+    "gig economy",
+    "outsourcing",
+    "offshoring"
+   ]
+  },
+  {
+   "code": "2.2",
+   "name": "Organizational structure",
+   "group": "Unit 2: Human resource management",
+   "keywords": [
+    "organizational structure",
+    "organisation chart",
+    "organizational chart",
+    "span of control",
+    "chain of command",
+    "delegation",
+    "hierarchy",
+    "delayering",
+    "matrix structure",
+    "flat structure",
+    "tall structure",
+    "centralization",
+    "decentralization"
+   ]
+  },
+  {
+   "code": "2.3",
+   "name": "Leadership and management",
+   "group": "Unit 2: Human resource management",
+   "keywords": [
+    "leadership",
+    "leadership style",
+    "autocratic",
+    "democratic",
+    "paternalistic",
+    "laissez-faire",
+    "situational leadership",
+    "management"
+   ]
+  },
+  {
+   "code": "2.4",
+   "name": "Motivation and demotivation",
+   "group": "Unit 2: Human resource management",
+   "keywords": [
+    "motivation",
+    "demotivation",
+    "maslow",
+    "herzberg",
+    "taylor",
+    "mcclelland",
+    "deci and ryan",
+    "equity theory",
+    "adams",
+    "pink",
+    "financial rewards",
+    "non-financial rewards",
+    "commission",
+    "piece rate",
+    "profit-related pay",
+    "job enrichment",
+    "job rotation",
+    "empowerment"
+   ]
+  },
+  {
+   "code": "2.5",
+   "name": "Organizational (corporate) culture (HL)",
+   "group": "Unit 2: Human resource management",
+   "keywords": [
+    "organizational culture",
+    "corporate culture",
+    "culture clash",
+    "handy"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "2.6",
+   "name": "Industrial/employee relations (HL)",
+   "group": "Unit 2: Human resource management",
+   "keywords": [
+    "industrial relations",
+    "employee relations",
+    "trade union",
+    "collective bargaining",
+    "strike",
+    "work-to-rule",
+    "conflict resolution"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "3.1",
+   "name": "Introduction to finance",
+   "group": "Unit 3: Finance and accounts",
+   "keywords": [
+    "capital expenditure",
+    "revenue expenditure"
+   ]
+  },
+  {
+   "code": "3.2",
+   "name": "Sources of finance",
+   "group": "Unit 3: Finance and accounts",
+   "keywords": [
+    "sources of finance",
+    "share capital",
+    "retained profit",
+    "loan capital",
+    "overdraft",
+    "trade credit",
+    "crowdfunding",
+    "leasing",
+    "microfinance",
+    "business angels",
+    "venture capital",
+    "debt factoring",
+    "grants"
+   ]
+  },
+  {
+   "code": "3.3",
+   "name": "Costs and revenues",
+   "group": "Unit 3: Finance and accounts",
+   "keywords": [
+    "fixed costs",
+    "variable costs",
+    "semi-variable",
+    "direct costs",
+    "indirect costs",
+    "total revenue",
+    "revenue streams"
+   ]
+  },
+  {
+   "code": "3.4",
+   "name": "Final accounts",
+   "group": "Unit 3: Finance and accounts",
+   "keywords": [
+    "final accounts",
+    "statement of profit or loss",
+    "profit and loss",
+    "balance sheet",
+    "statement of financial position",
+    "depreciation",
+    "intangible assets",
+    "straight line",
+    "reducing balance"
+   ]
+  },
+  {
+   "code": "3.5",
+   "name": "Profitability and liquidity ratio analysis",
+   "group": "Unit 3: Finance and accounts",
+   "keywords": [
+    "gross profit margin",
+    "profit margin",
+    "roce",
+    "return on capital employed",
+    "current ratio",
+    "acid test",
+    "quick ratio",
+    "liquidity"
+   ]
+  },
+  {
+   "code": "3.6",
+   "name": "Debt/efficiency ratio analysis (HL)",
+   "group": "Unit 3: Finance and accounts",
+   "keywords": [
+    "stock turnover",
+    "inventory turnover",
+    "debtor days",
+    "creditor days",
+    "gearing ratio",
+    "gearing"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "3.7",
+   "name": "Cash flow",
+   "group": "Unit 3: Finance and accounts",
+   "keywords": [
+    "cash flow",
+    "cash-flow forecast",
+    "cash flow forecast",
+    "working capital",
+    "liquidity crisis",
+    "net cash flow",
+    "opening balance",
+    "closing balance"
+   ]
+  },
+  {
+   "code": "3.8",
+   "name": "Investment appraisal",
+   "group": "Unit 3: Finance and accounts",
+   "keywords": [
+    "investment appraisal",
+    "payback period",
+    "average rate of return",
+    "arr",
+    "net present value",
+    "npv",
+    "discount factor"
+   ]
+  },
+  {
+   "code": "3.9",
+   "name": "Budgets (HL)",
+   "group": "Unit 3: Finance and accounts",
+   "keywords": [
+    "budget",
+    "budgets",
+    "variance",
+    "variances",
+    "favourable variance",
+    "adverse variance",
+    "cost centre",
+    "profit centre"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "4.1",
+   "name": "Introduction to marketing",
+   "group": "Unit 4: Marketing",
+   "keywords": [
+    "market share",
+    "market growth",
+    "market orientation",
+    "product orientation",
+    "social marketing",
+    "market leader"
+   ]
+  },
+  {
+   "code": "4.2",
+   "name": "Marketing planning",
+   "group": "Unit 4: Marketing",
+   "keywords": [
+    "marketing plan",
+    "marketing objectives",
+    "target market",
+    "market segmentation",
+    "segmentation",
+    "positioning",
+    "perception map",
+    "position map",
+    "unique selling point",
+    "usp"
+   ]
+  },
+  {
+   "code": "4.3",
+   "name": "Sales forecasting (HL)",
+   "group": "Unit 4: Marketing",
+   "keywords": [
+    "sales forecast",
+    "sales forecasting",
+    "moving average",
+    "trend",
+    "seasonal variation",
+    "cyclical variation",
+    "extrapolation"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "4.4",
+   "name": "Market research",
+   "group": "Unit 4: Marketing",
+   "keywords": [
+    "market research",
+    "primary research",
+    "secondary research",
+    "questionnaire",
+    "survey",
+    "focus group",
+    "sampling",
+    "quota sampling",
+    "random sampling",
+    "stratified"
+   ]
+  },
+  {
+   "code": "4.5",
+   "name": "The seven Ps of the marketing mix",
+   "group": "Unit 4: Marketing",
+   "keywords": [
+    "marketing mix",
+    "product life cycle",
+    "extension strategies",
+    "branding",
+    "brand",
+    "pricing strategy",
+    "penetration pricing",
+    "skimming",
+    "loss leader",
+    "price discrimination",
+    "promotion",
+    "above the line",
+    "below the line",
+    "social media marketing",
+    "place",
+    "distribution channel",
+    "people",
+    "processes",
+    "physical evidence",
+    "7 ps",
+    "seven ps"
+   ]
+  },
+  {
+   "code": "4.6",
+   "name": "International marketing (HL)",
+   "group": "Unit 4: Marketing",
+   "keywords": [
+    "international marketing",
+    "entering international markets",
+    "cultural differences"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "5.1",
+   "name": "Introduction to operations management",
+   "group": "Unit 5: Operations management",
+   "keywords": [
+    "operations management",
+    "sustainability",
+    "ecological sustainability"
+   ]
+  },
+  {
+   "code": "5.2",
+   "name": "Operations methods",
+   "group": "Unit 5: Operations management",
+   "keywords": [
+    "job production",
+    "batch production",
+    "mass production",
+    "flow production",
+    "mass customization",
+    "mass customisation"
+   ]
+  },
+  {
+   "code": "5.3",
+   "name": "Lean production and quality management (HL)",
+   "group": "Unit 5: Operations management",
+   "keywords": [
+    "lean production",
+    "kaizen",
+    "just-in-time",
+    "jit",
+    "kanban",
+    "andon",
+    "quality control",
+    "quality assurance",
+    "total quality management",
+    "tqm",
+    "benchmarking",
+    "cradle to cradle"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "5.4",
+   "name": "Location",
+   "group": "Unit 5: Operations management",
+   "keywords": [
+    "location",
+    "relocation",
+    "reshoring",
+    "offshoring",
+    "insourcing"
+   ]
+  },
+  {
+   "code": "5.5",
+   "name": "Break-even analysis",
+   "group": "Unit 5: Operations management",
+   "keywords": [
+    "break-even",
+    "break even",
+    "breakeven",
+    "contribution per unit",
+    "margin of safety",
+    "target profit"
+   ]
+  },
+  {
+   "code": "5.6",
+   "name": "Production planning (HL)",
+   "group": "Unit 5: Operations management",
+   "keywords": [
+    "production planning",
+    "supply chain",
+    "buffer stock",
+    "reorder level",
+    "lead time",
+    "capacity utilization",
+    "capacity utilisation",
+    "productivity rate",
+    "defect rate",
+    "make or buy",
+    "cost to make",
+    "cost to buy"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "5.7",
+   "name": "Crisis management and contingency planning (HL)",
+   "group": "Unit 5: Operations management",
+   "keywords": [
+    "crisis management",
+    "contingency planning",
+    "contingency plan"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "5.8",
+   "name": "Research and development (HL)",
+   "group": "Unit 5: Operations management",
+   "keywords": [
+    "research and development",
+    "r&d",
+    "innovation",
+    "intellectual property",
+    "patent",
+    "copyright",
+    "trademark",
+    "adaptive creativity",
+    "innovative creativity",
+    "pace of change"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "5.9",
+   "name": "Management information systems (HL)",
+   "group": "Unit 5: Operations management",
+   "keywords": [
+    "management information system",
+    "data analytics",
+    "database",
+    "cybersecurity",
+    "cybercrime",
+    "artificial intelligence",
+    "big data",
+    "customer loyalty programme",
+    "digital taylorism",
+    "critical infrastructure",
+    "virtual reality",
+    "internet of things"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "tk.swot",
+   "name": "SWOT analysis",
+   "group": "Toolkit",
+   "keywords": [
+    "swot"
+   ]
+  },
+  {
+   "code": "tk.ansoff",
+   "name": "Ansoff matrix",
+   "group": "Toolkit",
+   "keywords": [
+    "ansoff",
+    "market penetration",
+    "product development",
+    "market development",
+    "diversification"
+   ]
+  },
+  {
+   "code": "tk.steeple",
+   "name": "STEEPLE analysis",
+   "group": "Toolkit",
+   "keywords": [
+    "steeple",
+    "pestle",
+    "pest analysis"
+   ]
+  },
+  {
+   "code": "tk.bcg",
+   "name": "Boston Consulting Group matrix",
+   "group": "Toolkit",
+   "keywords": [
+    "boston matrix",
+    "bcg matrix",
+    "cash cow",
+    "question mark",
+    "problem child",
+    "dog",
+    "star"
+   ]
+  },
+  {
+   "code": "tk.plan",
+   "name": "Business plan",
+   "group": "Toolkit",
+   "keywords": [
+    "business plan"
+   ]
+  },
+  {
+   "code": "tk.tree",
+   "name": "Decision tree",
+   "group": "Toolkit",
+   "keywords": [
+    "decision tree",
+    "expected value"
+   ]
+  },
+  {
+   "code": "tk.ffa",
+   "name": "Force field analysis",
+   "group": "Toolkit",
+   "keywords": [
+    "force field"
+   ]
+  },
+  {
+   "code": "tk.gantt",
+   "name": "Gantt chart",
+   "group": "Toolkit",
+   "keywords": [
+    "gantt"
+   ]
+  },
+  {
+   "code": "tk.porter",
+   "name": "Porter's generic strategies",
+   "group": "Toolkit",
+   "keywords": [
+    "porter",
+    "generic strategies",
+    "cost leadership",
+    "differentiation",
+    "focus strategy"
+   ]
+  },
+  {
+   "code": "tk.hofstede",
+   "name": "Hofstede's cultural dimensions",
+   "group": "Toolkit",
+   "keywords": [
+    "hofstede",
+    "cultural dimensions",
+    "power distance",
+    "individualism"
+   ]
+  },
+  {
+   "code": "tk.cpa",
+   "name": "Critical path analysis (HL)",
+   "group": "Toolkit",
+   "keywords": [
+    "critical path",
+    "network diagram",
+    "float",
+    "earliest start",
+    "latest finish"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "tk.contribution",
+   "name": "Contribution (HL)",
+   "group": "Toolkit",
+   "keywords": [
+    "contribution",
+    "make or buy",
+    "special order",
+    "product portfolio"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "tk.regression",
+   "name": "Simple linear regression (HL)",
+   "group": "Toolkit",
+   "keywords": [
+    "linear regression",
+    "line of best fit",
+    "correlation",
+    "scatter diagram"
+   ],
+   "level": "HL"
+  }
+ ]
+}

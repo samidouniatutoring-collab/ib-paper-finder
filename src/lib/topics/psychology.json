@@ -1,0 +1,311 @@
+{
+ "subject": "psychology",
+ "note": "Edit freely. keywords are matched case- and accent-insensitively. Optional: papers (only tag on these paper numbers), level, marks [min,max] (tag by marks instead of keywords).",
+ "topics": [
+  {
+   "code": "bio.brain",
+   "name": "Brain and behaviour",
+   "group": "Biological approach",
+   "keywords": [
+    "localization",
+    "neuroplasticity",
+    "neural pruning",
+    "neurotransmitter",
+    "neurotransmission",
+    "brain",
+    "synaptic",
+    "agonist",
+    "antagonist",
+    "techniques used to study the brain",
+    "fmri",
+    "mri",
+    "pet scan",
+    "eeg"
+   ]
+  },
+  {
+   "code": "bio.hormones",
+   "name": "Hormones and pheromones",
+   "group": "Biological approach",
+   "keywords": [
+    "hormone",
+    "hormones",
+    "pheromone",
+    "pheromones",
+    "cortisol",
+    "oxytocin",
+    "testosterone",
+    "melatonin"
+   ]
+  },
+  {
+   "code": "bio.genetics",
+   "name": "Genetics and behaviour",
+   "group": "Biological approach",
+   "keywords": [
+    "gene",
+    "genes",
+    "genetic",
+    "genetics",
+    "twin studies",
+    "kinship",
+    "evolutionary",
+    "heritability"
+   ]
+  },
+  {
+   "code": "bio.animal",
+   "name": "Role of animal research (HL)",
+   "group": "Biological approach",
+   "keywords": [
+    "animal research",
+    "animal studies",
+    "animal models",
+    "rats",
+    "mice"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "cog.processing",
+   "name": "Cognitive processing",
+   "group": "Cognitive approach",
+   "keywords": [
+    "memory",
+    "multi-store model",
+    "working memory model",
+    "schema",
+    "schema theory",
+    "thinking and decision-making",
+    "dual processing",
+    "heuristics"
+   ]
+  },
+  {
+   "code": "cog.reliability",
+   "name": "Reliability of cognitive processes",
+   "group": "Cognitive approach",
+   "keywords": [
+    "reconstructive memory",
+    "eyewitness",
+    "leading questions",
+    "cognitive bias",
+    "biases in thinking",
+    "confirmation bias"
+   ]
+  },
+  {
+   "code": "cog.emotion",
+   "name": "Emotion and cognition",
+   "group": "Cognitive approach",
+   "keywords": [
+    "emotion",
+    "flashbulb memory",
+    "flashbulb memories",
+    "amygdala"
+   ]
+  },
+  {
+   "code": "cog.digital",
+   "name": "Cognitive processing in the digital world (HL)",
+   "group": "Cognitive approach",
+   "keywords": [
+    "digital",
+    "technology",
+    "video games",
+    "internet",
+    "screen time",
+    "social media"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "soc.group",
+   "name": "The individual and the group",
+   "group": "Sociocultural approach",
+   "keywords": [
+    "social identity theory",
+    "social cognitive theory",
+    "social learning",
+    "stereotype",
+    "stereotypes",
+    "stereotyping",
+    "in-group",
+    "out-group",
+    "conformity"
+   ]
+  },
+  {
+   "code": "soc.culture",
+   "name": "Cultural origins of behaviour and cognition",
+   "group": "Sociocultural approach",
+   "keywords": [
+    "culture",
+    "cultural norms",
+    "cultural dimensions",
+    "hofstede",
+    "individualism",
+    "collectivism"
+   ]
+  },
+  {
+   "code": "soc.attitudes",
+   "name": "Cultural influences on individual attitudes, identity and behaviour",
+   "group": "Sociocultural approach",
+   "keywords": [
+    "enculturation",
+    "acculturation",
+    "assimilation"
+   ]
+  },
+  {
+   "code": "soc.global",
+   "name": "The influence of globalization (HL)",
+   "group": "Sociocultural approach",
+   "keywords": [
+    "globalization",
+    "globalisation",
+    "global"
+   ],
+   "level": "HL"
+  },
+  {
+   "code": "rm.methods",
+   "name": "Research methods",
+   "group": "Research methods",
+   "keywords": [
+    "experiment",
+    "experimental",
+    "correlational",
+    "case study",
+    "interview",
+    "observation",
+    "qualitative",
+    "quantitative",
+    "research method",
+    "sampling",
+    "sample",
+    "generalizability",
+    "generalisability",
+    "generalize",
+    "credibility",
+    "bias",
+    "triangulation",
+    "reflexivity",
+    "transferability"
+   ]
+  },
+  {
+   "code": "rm.ethics",
+   "name": "Ethics in research",
+   "group": "Research methods",
+   "keywords": [
+    "ethics",
+    "ethical",
+    "informed consent",
+    "deception",
+    "debriefing",
+    "right to withdraw",
+    "confidentiality",
+    "anonymity"
+   ]
+  },
+  {
+   "code": "opt.abnormal",
+   "name": "Abnormal psychology",
+   "group": "Options",
+   "keywords": [
+    "abnormal",
+    "diagnosis",
+    "disorder",
+    "depression",
+    "ptsd",
+    "etiology",
+    "aetiology",
+    "prevalence",
+    "treatment",
+    "therapy",
+    "cbt",
+    "drug treatment",
+    "dsm",
+    "icd",
+    "normality"
+   ]
+  },
+  {
+   "code": "opt.developmental",
+   "name": "Developmental psychology",
+   "group": "Options",
+   "keywords": [
+    "development",
+    "developmental",
+    "attachment",
+    "childhood",
+    "trauma",
+    "resilience",
+    "brain development",
+    "cognitive development",
+    "social development",
+    "poverty",
+    "gender identity",
+    "social roles"
+   ]
+  },
+  {
+   "code": "opt.health",
+   "name": "Health psychology",
+   "group": "Options",
+   "keywords": [
+    "health",
+    "stress",
+    "addiction",
+    "obesity",
+    "health problem",
+    "health promotion",
+    "prevention",
+    "well-being",
+    "wellbeing"
+   ]
+  },
+  {
+   "code": "opt.relationships",
+   "name": "Human relationships",
+   "group": "Options",
+   "keywords": [
+    "relationship",
+    "relationships",
+    "personal relationships",
+    "group dynamics",
+    "prosocial",
+    "altruism",
+    "bystander",
+    "cooperation",
+    "competition",
+    "prejudice",
+    "discrimination",
+    "origins of conflict",
+    "communication in relationships"
+   ]
+  },
+  {
+   "code": "type.saq",
+   "name": "SAQ (short-answer question)",
+   "group": "Question type",
+   "keywords": [],
+   "marks": [
+    1,
+    9
+   ]
+  },
+  {
+   "code": "type.erq",
+   "name": "ERQ (essay response)",
+   "group": "Question type",
+   "keywords": [],
+   "marks": [
+    15,
+    22
+   ]
+  }
+ ]
+}

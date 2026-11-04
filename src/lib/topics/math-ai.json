@@ -1,0 +1,517 @@
+{
+ "subject": "math-ai",
+ "note": "Edit freely. keywords are matched case- and accent-insensitively. Optional: papers (only tag on these paper numbers), level, marks [min,max] (tag by marks instead of keywords).",
+ "topics": [
+  {
+   "code": "1.1",
+   "name": "Standard form",
+   "group": "Topic 1: Number and algebra",
+   "keywords": [
+    "standard form",
+    "scientific notation",
+    "a × 10",
+    "x 10^"
+   ]
+  },
+  {
+   "code": "1.2",
+   "name": "Arithmetic sequences and series",
+   "group": "Topic 1: Number and algebra",
+   "keywords": [
+    "arithmetic sequence",
+    "arithmetic series",
+    "common difference",
+    "nth term",
+    "sigma notation"
+   ]
+  },
+  {
+   "code": "1.3",
+   "name": "Geometric sequences and series",
+   "group": "Topic 1: Number and algebra",
+   "keywords": [
+    "geometric sequence",
+    "geometric series",
+    "common ratio"
+   ]
+  },
+  {
+   "code": "1.4",
+   "name": "Financial maths: compound interest and depreciation",
+   "group": "Topic 1: Number and algebra",
+   "keywords": [
+    "compound interest",
+    "compounded",
+    "interest rate",
+    "depreciation",
+    "depreciates",
+    "inflation",
+    "annual rate",
+    "monthly",
+    "investment",
+    "tvm",
+    "financial"
+   ]
+  },
+  {
+   "code": "1.5",
+   "name": "Exponents and logarithms",
+   "group": "Topic 1: Number and algebra",
+   "keywords": [
+    "logarithm",
+    "log",
+    "exponent",
+    "laws of exponents"
+   ]
+  },
+  {
+   "code": "1.6",
+   "name": "Approximation and errors",
+   "group": "Topic 1: Number and algebra",
+   "keywords": [
+    "percentage error",
+    "upper bound",
+    "lower bound",
+    "significant figures",
+    "decimal places",
+    "approximation",
+    "estimate"
+   ]
+  },
+  {
+   "code": "1.7",
+   "name": "Amortization and annuities",
+   "group": "Topic 1: Number and algebra",
+   "keywords": [
+    "amortization",
+    "amortisation",
+    "annuity",
+    "loan",
+    "repayment",
+    "mortgage",
+    "instalment"
+   ]
+  },
+  {
+   "code": "1.8",
+   "name": "Equations with technology",
+   "group": "Topic 1: Number and algebra",
+   "keywords": [
+    "system of equations",
+    "simultaneous equations",
+    "polynomial equation",
+    "linear equations"
+   ]
+  },
+  {
+   "code": "2.1",
+   "name": "Equations of straight lines",
+   "group": "Topic 2: Functions",
+   "keywords": [
+    "gradient",
+    "y-intercept",
+    "straight line",
+    "perpendicular",
+    "parallel",
+    "y = mx + c"
+   ]
+  },
+  {
+   "code": "2.2",
+   "name": "Functions: domain, range, inverse",
+   "group": "Topic 2: Functions",
+   "keywords": [
+    "domain",
+    "range",
+    "inverse function",
+    "f^-1",
+    "mapping"
+   ]
+  },
+  {
+   "code": "2.3",
+   "name": "Graphs and key features",
+   "group": "Topic 2: Functions",
+   "keywords": [
+    "sketch the graph",
+    "axis of symmetry",
+    "vertex",
+    "asymptote",
+    "intercept",
+    "maximum point",
+    "minimum point",
+    "zero of"
+   ]
+  },
+  {
+   "code": "2.5",
+   "name": "Linear and quadratic models",
+   "group": "Topic 2: Functions",
+   "keywords": [
+    "linear model",
+    "quadratic model",
+    "quadratic function",
+    "parabola",
+    "piecewise"
+   ]
+  },
+  {
+   "code": "2.5e",
+   "name": "Exponential models",
+   "group": "Topic 2: Functions",
+   "keywords": [
+    "exponential model",
+    "exponential",
+    "growth",
+    "decay",
+    "half-life",
+    "doubling"
+   ]
+  },
+  {
+   "code": "2.5s",
+   "name": "Sinusoidal models",
+   "group": "Topic 2: Functions",
+   "keywords": [
+    "sinusoidal",
+    "sine curve",
+    "cosine curve",
+    "amplitude",
+    "period",
+    "principal axis",
+    "periodic"
+   ]
+  },
+  {
+   "code": "2.5c",
+   "name": "Cubic and variation models",
+   "group": "Topic 2: Functions",
+   "keywords": [
+    "cubic model",
+    "direct variation",
+    "inverse variation",
+    "varies inversely",
+    "varies directly"
+   ]
+  },
+  {
+   "code": "3.1",
+   "name": "3D geometry: volume and surface area",
+   "group": "Topic 3: Geometry and trigonometry",
+   "keywords": [
+    "volume",
+    "surface area",
+    "cylinder",
+    "cone",
+    "sphere",
+    "pyramid",
+    "prism",
+    "cuboid",
+    "hemisphere",
+    "midpoint",
+    "three-dimensional",
+    "3d"
+   ]
+  },
+  {
+   "code": "3.2",
+   "name": "Sine and cosine rules, area of a triangle",
+   "group": "Topic 3: Geometry and trigonometry",
+   "keywords": [
+    "sine rule",
+    "cosine rule",
+    "area of triangle",
+    "area of the triangle",
+    "non-right",
+    "obtuse"
+   ]
+  },
+  {
+   "code": "3.3",
+   "name": "Trigonometry applications: elevation, bearings",
+   "group": "Topic 3: Geometry and trigonometry",
+   "keywords": [
+    "angle of elevation",
+    "angle of depression",
+    "bearing",
+    "bearings",
+    "right-angled triangle",
+    "pythagoras"
+   ]
+  },
+  {
+   "code": "3.4",
+   "name": "Circles: arc length and sector area",
+   "group": "Topic 3: Geometry and trigonometry",
+   "keywords": [
+    "arc length",
+    "sector",
+    "radian",
+    "radians",
+    "circle"
+   ]
+  },
+  {
+   "code": "3.5",
+   "name": "Perpendicular bisectors",
+   "group": "Topic 3: Geometry and trigonometry",
+   "keywords": [
+    "perpendicular bisector"
+   ]
+  },
+  {
+   "code": "3.6",
+   "name": "Voronoi diagrams",
+   "group": "Topic 3: Geometry and trigonometry",
+   "keywords": [
+    "voronoi",
+    "site",
+    "sites",
+    "cell",
+    "toxic waste",
+    "nearest neighbour",
+    "largest empty circle"
+   ]
+  },
+  {
+   "code": "4.1",
+   "name": "Sampling and data",
+   "group": "Topic 4: Statistics and probability",
+   "keywords": [
+    "sample",
+    "sampling",
+    "population",
+    "discrete data",
+    "continuous data",
+    "outlier",
+    "bias",
+    "convenience sampling",
+    "stratified",
+    "systematic",
+    "quota"
+   ]
+  },
+  {
+   "code": "4.2",
+   "name": "Presenting data",
+   "group": "Topic 4: Statistics and probability",
+   "keywords": [
+    "histogram",
+    "box and whisker",
+    "box plot",
+    "cumulative frequency",
+    "frequency table",
+    "frequency distribution"
+   ]
+  },
+  {
+   "code": "4.3",
+   "name": "Averages and spread",
+   "group": "Topic 4: Statistics and probability",
+   "keywords": [
+    "mean",
+    "median",
+    "mode",
+    "interquartile range",
+    "standard deviation",
+    "quartile",
+    "variance",
+    "modal class"
+   ]
+  },
+  {
+   "code": "4.4",
+   "name": "Linear correlation and regression",
+   "group": "Topic 4: Statistics and probability",
+   "keywords": [
+    "pearson",
+    "correlation coefficient",
+    "regression line",
+    "line of best fit",
+    "bivariate",
+    "scatter",
+    "least squares"
+   ]
+  },
+  {
+   "code": "4.5",
+   "name": "Probability",
+   "group": "Topic 4: Statistics and probability",
+   "keywords": [
+    "probability",
+    "sample space",
+    "complementary",
+    "expected number"
+   ]
+  },
+  {
+   "code": "4.6",
+   "name": "Venn and tree diagrams, conditional probability",
+   "group": "Topic 4: Statistics and probability",
+   "keywords": [
+    "venn diagram",
+    "tree diagram",
+    "conditional probability",
+    "mutually exclusive",
+    "independent events",
+    "given that"
+   ]
+  },
+  {
+   "code": "4.7",
+   "name": "Discrete random variables",
+   "group": "Topic 4: Statistics and probability",
+   "keywords": [
+    "random variable",
+    "probability distribution",
+    "expected value",
+    "e(x)",
+    "fair game"
+   ]
+  },
+  {
+   "code": "4.8",
+   "name": "Binomial distribution",
+   "group": "Topic 4: Statistics and probability",
+   "keywords": [
+    "binomial",
+    "b(n",
+    "trials",
+    "successes"
+   ]
+  },
+  {
+   "code": "4.9",
+   "name": "Normal distribution",
+   "group": "Topic 4: Statistics and probability",
+   "keywords": [
+    "normal distribution",
+    "normally distributed",
+    "n(μ",
+    "standard normal",
+    "bell"
+   ]
+  },
+  {
+   "code": "4.10",
+   "name": "Spearman's rank correlation",
+   "group": "Topic 4: Statistics and probability",
+   "keywords": [
+    "spearman",
+    "rank correlation",
+    "rs",
+    "ranks"
+   ]
+  },
+  {
+   "code": "4.11",
+   "name": "Hypothesis testing: χ² and t-test",
+   "group": "Topic 4: Statistics and probability",
+   "keywords": [
+    "chi-squared",
+    "χ2",
+    "χ²",
+    "chi squared",
+    "goodness of fit",
+    "test for independence",
+    "contingency table",
+    "null hypothesis",
+    "alternative hypothesis",
+    "p-value",
+    "significance level",
+    "t-test",
+    "degrees of freedom",
+    "critical value",
+    "expected frequency",
+    "observed frequency"
+   ]
+  },
+  {
+   "code": "5.1",
+   "name": "Introduction to differentiation",
+   "group": "Topic 5: Calculus",
+   "keywords": [
+    "derivative",
+    "differentiate",
+    "rate of change",
+    "limit",
+    "dy/dx",
+    "f'(x)",
+    "gradient function"
+   ]
+  },
+  {
+   "code": "5.2",
+   "name": "Increasing and decreasing functions",
+   "group": "Topic 5: Calculus",
+   "keywords": [
+    "increasing",
+    "decreasing"
+   ]
+  },
+  {
+   "code": "5.4",
+   "name": "Tangents and normals",
+   "group": "Topic 5: Calculus",
+   "keywords": [
+    "tangent",
+    "normal to the curve",
+    "equation of the tangent",
+    "equation of the normal"
+   ]
+  },
+  {
+   "code": "5.5",
+   "name": "Integration and area",
+   "group": "Topic 5: Calculus",
+   "keywords": [
+    "integral",
+    "integrate",
+    "integration",
+    "anti-derivative",
+    "antiderivative",
+    "area under",
+    "area enclosed",
+    "definite integral"
+   ]
+  },
+  {
+   "code": "5.6",
+   "name": "Stationary points",
+   "group": "Topic 5: Calculus",
+   "keywords": [
+    "stationary point",
+    "local maximum",
+    "local minimum",
+    "turning point"
+   ]
+  },
+  {
+   "code": "5.7",
+   "name": "Optimisation",
+   "group": "Topic 5: Calculus",
+   "keywords": [
+    "optimisation",
+    "optimization",
+    "maximize",
+    "maximise",
+    "minimize",
+    "minimise",
+    "maximum volume",
+    "minimum cost",
+    "maximum profit"
+   ]
+  },
+  {
+   "code": "5.8",
+   "name": "Trapezoidal rule",
+   "group": "Topic 5: Calculus",
+   "keywords": [
+    "trapezoidal rule",
+    "trapezium rule",
+    "trapezoid rule",
+    "approximate the area"
+   ]
+  }
+ ]
+}

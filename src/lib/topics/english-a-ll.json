@@ -1,0 +1,270 @@
+{
+ "subject": "english-a-ll",
+ "note": "Edit freely. keywords are matched case- and accent-insensitively. Optional: papers (only tag on these paper numbers), level, marks [min,max] (tag by marks instead of keywords).",
+ "topics": [
+  {
+   "code": "ae.readers",
+   "name": "Readers, writers and texts",
+   "group": "Areas of exploration",
+   "keywords": [
+    "reader",
+    "readers",
+    "writer",
+    "writers",
+    "audience",
+    "purpose",
+    "perspective",
+    "voice",
+    "narrator"
+   ]
+  },
+  {
+   "code": "ae.time",
+   "name": "Time and space",
+   "group": "Areas of exploration",
+   "keywords": [
+    "context",
+    "historical",
+    "cultural context",
+    "time and space",
+    "period",
+    "place",
+    "setting"
+   ]
+  },
+  {
+   "code": "ae.inter",
+   "name": "Intertextuality: connecting texts",
+   "group": "Areas of exploration",
+   "keywords": [
+    "intertextuality",
+    "intertextual",
+    "connect",
+    "compare",
+    "comparison",
+    "genre",
+    "conventions",
+    "tradition"
+   ]
+  },
+  {
+   "code": "gi.culture",
+   "name": "Culture, identity and community",
+   "group": "Global issues",
+   "keywords": [
+    "culture",
+    "identity",
+    "community",
+    "family",
+    "belonging",
+    "gender",
+    "ethnicity",
+    "migration"
+   ]
+  },
+  {
+   "code": "gi.beliefs",
+   "name": "Beliefs, values and education",
+   "group": "Global issues",
+   "keywords": [
+    "belief",
+    "beliefs",
+    "values",
+    "education",
+    "religion",
+    "morality",
+    "ethics"
+   ]
+  },
+  {
+   "code": "gi.politics",
+   "name": "Politics, power and justice",
+   "group": "Global issues",
+   "keywords": [
+    "power",
+    "politics",
+    "political",
+    "justice",
+    "injustice",
+    "rights",
+    "oppression",
+    "protest",
+    "inequality"
+   ]
+  },
+  {
+   "code": "gi.art",
+   "name": "Art, creativity and the imagination",
+   "group": "Global issues",
+   "keywords": [
+    "art",
+    "creativity",
+    "imagination",
+    "artist",
+    "beauty",
+    "music"
+   ]
+  },
+  {
+   "code": "gi.science",
+   "name": "Science, technology and the environment",
+   "group": "Global issues",
+   "keywords": [
+    "science",
+    "technology",
+    "environment",
+    "climate",
+    "nature",
+    "digital",
+    "social media",
+    "sustainability"
+   ]
+  },
+  {
+   "code": "tt.ad",
+   "name": "Advertisement",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "advertisement",
+    "advert",
+    "ad campaign",
+    "slogan",
+    "brand"
+   ],
+   "papers": [
+    1
+   ]
+  },
+  {
+   "code": "tt.cartoon",
+   "name": "Cartoon / comic",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "cartoon",
+    "comic",
+    "graphic novel",
+    "panel"
+   ],
+   "papers": [
+    1
+   ]
+  },
+  {
+   "code": "tt.infographic",
+   "name": "Infographic",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "infographic",
+    "chart",
+    "statistics"
+   ],
+   "papers": [
+    1
+   ]
+  },
+  {
+   "code": "tt.opinion",
+   "name": "Opinion column / editorial",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "opinion",
+    "column",
+    "editorial",
+    "op-ed"
+   ],
+   "papers": [
+    1
+   ]
+  },
+  {
+   "code": "tt.speech",
+   "name": "Speech",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "speech",
+    "address",
+    "delivered"
+   ],
+   "papers": [
+    1
+   ]
+  },
+  {
+   "code": "tt.photo",
+   "name": "Photograph",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "photograph",
+    "photo",
+    "image"
+   ],
+   "papers": [
+    1
+   ]
+  },
+  {
+   "code": "tt.poster",
+   "name": "Poster",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "poster",
+    "campaign"
+   ],
+   "papers": [
+    1
+   ]
+  },
+  {
+   "code": "tt.blog",
+   "name": "Blog / web page",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "blog",
+    "web page",
+    "website",
+    "online"
+   ],
+   "papers": [
+    1
+   ]
+  },
+  {
+   "code": "tt.letter",
+   "name": "Letter",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "letter",
+    "dear"
+   ],
+   "papers": [
+    1
+   ]
+  },
+  {
+   "code": "tt.interview",
+   "name": "Interview",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "interview",
+    "interviewer"
+   ],
+   "papers": [
+    1
+   ]
+  },
+  {
+   "code": "tt.travel",
+   "name": "Travel writing / memoir",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "travel",
+    "memoir",
+    "journey",
+    "autobiography"
+   ],
+   "papers": [
+    1
+   ]
+  }
+ ]
+}

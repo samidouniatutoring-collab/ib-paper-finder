@@ -1,0 +1,283 @@
+{
+ "subject": "spanish-b",
+ "note": "Edit freely. keywords are matched case- and accent-insensitively. Optional: papers (only tag on these paper numbers), level, marks [min,max] (tag by marks instead of keywords).",
+ "topics": [
+  {
+   "code": "th.identities",
+   "name": "Identities",
+   "group": "Themes",
+   "keywords": [
+    "identidad",
+    "identidades",
+    "estilos de vida",
+    "salud",
+    "creencias",
+    "valores",
+    "subculturas",
+    "lengua",
+    "bienestar",
+    "identities",
+    "lifestyle"
+   ],
+   "nameEs": "Identidades"
+  },
+  {
+   "code": "th.experiences",
+   "name": "Experiences",
+   "group": "Themes",
+   "keywords": [
+    "experiencias",
+    "viajes",
+    "vacaciones",
+    "ocio",
+    "tradiciones",
+    "costumbres",
+    "migracion",
+    "emigracion",
+    "recuerdos",
+    "festividades",
+    "experiences",
+    "travel",
+    "leisure"
+   ],
+   "nameEs": "Experiencias"
+  },
+  {
+   "code": "th.ingenuity",
+   "name": "Human ingenuity",
+   "group": "Themes",
+   "keywords": [
+    "ingenio",
+    "tecnologia",
+    "ciencia",
+    "innovacion",
+    "arte",
+    "medios de comunicacion",
+    "entretenimiento",
+    "redes sociales",
+    "internet",
+    "creatividad",
+    "technology",
+    "media"
+   ],
+   "nameEs": "Ingenio humano"
+  },
+  {
+   "code": "th.social",
+   "name": "Social organization",
+   "group": "Themes",
+   "keywords": [
+    "organizacion social",
+    "comunidad",
+    "educacion",
+    "escuela",
+    "trabajo",
+    "empleo",
+    "ley",
+    "orden",
+    "relaciones sociales",
+    "participacion",
+    "community",
+    "education",
+    "work"
+   ],
+   "nameEs": "Organización social"
+  },
+  {
+   "code": "th.planet",
+   "name": "Sharing the planet",
+   "group": "Themes",
+   "keywords": [
+    "planeta",
+    "medio ambiente",
+    "cambio climatico",
+    "derechos humanos",
+    "paz",
+    "conflicto",
+    "igualdad",
+    "globalizacion",
+    "etica",
+    "mundo urbano",
+    "mundo rural",
+    "environment",
+    "climate"
+   ],
+   "nameEs": "Compartir el planeta"
+  },
+  {
+   "code": "tt.article",
+   "name": "Article",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "articulo",
+    "article"
+   ],
+   "papers": [
+    1
+   ],
+   "nameEs": "Artículo"
+  },
+  {
+   "code": "tt.blog",
+   "name": "Blog",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "blog",
+    "entrada de blog"
+   ],
+   "papers": [
+    1
+   ]
+  },
+  {
+   "code": "tt.email",
+   "name": "Email",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "correo electronico",
+    "correo",
+    "email",
+    "e-mail"
+   ],
+   "papers": [
+    1
+   ],
+   "nameEs": "Correo electrónico"
+  },
+  {
+   "code": "tt.letter",
+   "name": "Letter",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "carta",
+    "letter"
+   ],
+   "papers": [
+    1
+   ],
+   "nameEs": "Carta"
+  },
+  {
+   "code": "tt.speech",
+   "name": "Speech",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "discurso",
+    "speech",
+    "presentacion"
+   ],
+   "papers": [
+    1
+   ],
+   "nameEs": "Discurso"
+  },
+  {
+   "code": "tt.review",
+   "name": "Review",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "resena",
+    "critica",
+    "review"
+   ],
+   "papers": [
+    1
+   ],
+   "nameEs": "Reseña"
+  },
+  {
+   "code": "tt.brochure",
+   "name": "Brochure / leaflet",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "folleto",
+    "brochure",
+    "leaflet",
+    "volante"
+   ],
+   "papers": [
+    1
+   ],
+   "nameEs": "Folleto"
+  },
+  {
+   "code": "tt.report",
+   "name": "Report",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "informe",
+    "report"
+   ],
+   "papers": [
+    1
+   ],
+   "nameEs": "Informe"
+  },
+  {
+   "code": "tt.diary",
+   "name": "Diary",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "diario",
+    "diary"
+   ],
+   "papers": [
+    1
+   ],
+   "nameEs": "Diario"
+  },
+  {
+   "code": "tt.interview",
+   "name": "Interview",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "entrevista",
+    "interview"
+   ],
+   "papers": [
+    1
+   ],
+   "nameEs": "Entrevista"
+  },
+  {
+   "code": "tt.proposal",
+   "name": "Proposal",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "propuesta",
+    "proposal"
+   ],
+   "papers": [
+    1
+   ],
+   "nameEs": "Propuesta"
+  },
+  {
+   "code": "tt.essay",
+   "name": "Essay",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "ensayo",
+    "essay"
+   ],
+   "papers": [
+    1
+   ],
+   "nameEs": "Ensayo"
+  },
+  {
+   "code": "tt.instructions",
+   "name": "Instructions / guidelines",
+   "group": "Paper 1 text types",
+   "keywords": [
+    "instrucciones",
+    "guia",
+    "consejos"
+   ],
+   "papers": [
+    1
+   ],
+   "nameEs": "Instrucciones"
+  }
+ ]
+}

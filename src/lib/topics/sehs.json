@@ -1,0 +1,234 @@
+{
+ "subject": "sehs",
+ "note": "Edit freely. keywords are matched case- and accent-insensitively. Optional: papers (only tag on these paper numbers), level, marks [min,max] (tag by marks instead of keywords).",
+ "topics": [
+  {
+   "code": "A.1",
+   "name": "Communication: nervous and endocrine systems",
+   "group": "Theme A: Exercise physiology and nutrition",
+   "keywords": [
+    "nervous system",
+    "neuron",
+    "neurone",
+    "motor unit",
+    "neuromuscular",
+    "action potential",
+    "endocrine",
+    "hormone",
+    "sliding filament",
+    "muscle contraction",
+    "proprioception"
+   ]
+  },
+  {
+   "code": "A.2",
+   "name": "Hydration and nutrition",
+   "group": "Theme A: Exercise physiology and nutrition",
+   "keywords": [
+    "hydration",
+    "dehydration",
+    "nutrition",
+    "macronutrient",
+    "micronutrient",
+    "carbohydrate",
+    "protein",
+    "fat",
+    "glycogen",
+    "diet",
+    "energy balance",
+    "water balance",
+    "electrolyte",
+    "supplements"
+   ]
+  },
+  {
+   "code": "A.3",
+   "name": "Energy systems",
+   "group": "Theme A: Exercise physiology and nutrition",
+   "keywords": [
+    "energy system",
+    "atp",
+    "atp-cp",
+    "creatine phosphate",
+    "anaerobic",
+    "aerobic",
+    "glycolysis",
+    "lactate",
+    "oxygen deficit",
+    "epoc",
+    "vo2",
+    "vo2 max",
+    "fatigue",
+    "respiration"
+   ]
+  },
+  {
+   "code": "A.4",
+   "name": "Cardiorespiratory system",
+   "group": "Theme A: Exercise physiology and nutrition",
+   "keywords": [
+    "heart rate",
+    "stroke volume",
+    "cardiac output",
+    "blood pressure",
+    "ventilation",
+    "tidal volume",
+    "lungs",
+    "cardiovascular",
+    "respiratory",
+    "blood flow"
+   ]
+  },
+  {
+   "code": "B.1",
+   "name": "Generating movement: skeletal and muscular systems",
+   "group": "Theme B: Biomechanics",
+   "keywords": [
+    "bone",
+    "bones",
+    "joint",
+    "joints",
+    "synovial",
+    "muscle",
+    "muscles",
+    "agonist",
+    "antagonist",
+    "lever",
+    "levers",
+    "flexion",
+    "extension",
+    "abduction",
+    "adduction",
+    "rotation",
+    "plane of movement",
+    "anatomical"
+   ]
+  },
+  {
+   "code": "B.2",
+   "name": "Forces, motion and movement",
+   "group": "Theme B: Biomechanics",
+   "keywords": [
+    "force",
+    "forces",
+    "newton",
+    "velocity",
+    "acceleration",
+    "momentum",
+    "impulse",
+    "projectile",
+    "centre of mass",
+    "center of mass",
+    "angular momentum",
+    "moment of inertia",
+    "torque",
+    "friction",
+    "drag",
+    "bernoulli",
+    "magnus"
+   ]
+  },
+  {
+   "code": "B.3",
+   "name": "Injury",
+   "group": "Theme B: Biomechanics",
+   "keywords": [
+    "injury",
+    "injuries",
+    "sprain",
+    "strain",
+    "fracture",
+    "overuse",
+    "rehabilitation",
+    "warm-up",
+    "risk factor",
+    "concussion",
+    "acute",
+    "chronic"
+   ]
+  },
+  {
+   "code": "C.1",
+   "name": "Individual differences",
+   "group": "Theme C: Sport psychology and motor learning",
+   "keywords": [
+    "personality",
+    "trait",
+    "ability",
+    "talent",
+    "individual differences",
+    "mental toughness"
+   ]
+  },
+  {
+   "code": "C.2",
+   "name": "Motor learning",
+   "group": "Theme C: Sport psychology and motor learning",
+   "keywords": [
+    "skill",
+    "skills",
+    "motor learning",
+    "practice",
+    "feedback",
+    "stages of learning",
+    "information processing",
+    "reaction time",
+    "transfer",
+    "massed",
+    "distributed",
+    "variable practice",
+    "learning curve"
+   ]
+  },
+  {
+   "code": "C.3",
+   "name": "Motivation",
+   "group": "Theme C: Sport psychology and motor learning",
+   "keywords": [
+    "motivation",
+    "intrinsic",
+    "extrinsic",
+    "goal setting",
+    "self-determination",
+    "attribution",
+    "achievement motivation"
+   ]
+  },
+  {
+   "code": "C.4",
+   "name": "Arousal, anxiety and performance",
+   "group": "Theme C: Sport psychology and motor learning",
+   "keywords": [
+    "arousal",
+    "anxiety",
+    "inverted-u",
+    "drive theory",
+    "catastrophe",
+    "stress",
+    "imagery",
+    "relaxation",
+    "mental rehearsal",
+    "self-talk",
+    "concentration"
+   ]
+  },
+  {
+   "code": "T.1",
+   "name": "Measurement and data analysis",
+   "group": "Tools: measurement and research",
+   "keywords": [
+    "mean",
+    "standard deviation",
+    "t-test",
+    "correlation",
+    "validity",
+    "reliability",
+    "fitness test",
+    "uncertainty",
+    "error bars",
+    "graph",
+    "data"
+   ]
+  }
+ ]
+}
