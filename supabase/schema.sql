@@ -41,7 +41,7 @@ create table if not exists public.papers (
   session text check (session in ('May', 'November')),
   timezone text check (timezone in ('TZ0', 'TZ1', 'TZ2')),
   paper_number int,
-  kind text not null default 'paper' check (kind in ('paper', 'markscheme')),
+  kind text not null default 'paper' check (kind in ('paper', 'markscheme', 'prerelease')),
   page_count int not null default 0,
   needs_review boolean not null default false,
   created_at timestamptz not null default now()
@@ -395,3 +395,9 @@ create policy "ms ranges: approved read" on public.markscheme_ranges for select 
 drop policy if exists "ms ranges: owner write" on public.markscheme_ranges;
 create policy "ms ranges: owner write" on public.markscheme_ranges for all to authenticated
   using (public.is_owner()) with check (public.is_owner());
+
+-- ---------------------------------------------------------------------------
+-- Pre-release statements (Business Management Paper 1): a third file kind
+-- ---------------------------------------------------------------------------
+alter table public.papers drop constraint if exists papers_kind_check;
+alter table public.papers add constraint papers_kind_check check (kind in ('paper', 'markscheme', 'prerelease'));

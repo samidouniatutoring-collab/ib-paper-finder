@@ -1,4 +1,4 @@
-import { loadMyProgress, paperLabel, saveProgress, state, subjectName, type Question } from "../data";
+import { findPrerelease, loadMyProgress, paperLabel, saveProgress, state, subjectName, type Question } from "../data";
 import { tr } from "../i18n";
 import { SUBJECTS, type SubjectId } from "../lib/detect";
 import { formatClock, parsePracticeSettings, pickPracticeQuestion, practicePool, timerSeconds, type PracticeFilter } from "../lib/practice";
@@ -6,7 +6,7 @@ import { TOPIC_MAPS, tagId } from "../lib/topics";
 import { loadPaperDoc } from "../pdf";
 import { errorText, h, spinner, toast } from "../ui";
 import { subjectQuestions, topicName } from "./finder";
-import { markschemeFor, pageWidth, renderRange, showMarkscheme } from "./viewer";
+import { markschemeFor, pageWidth, prereleaseButton, renderRange, showMarkscheme } from "./viewer";
 
 const choice = { subject: "", topics: [] as string[], paper: "", level: "", includeDone: false };
 let timer: number | undefined;
@@ -103,6 +103,8 @@ async function runSession(root: HTMLElement): Promise<void> {
     timer = window.setInterval(() => { if (!document.body.contains(clock)) clearInterval(timer); else tick(); }, 1000);
 
     const pages = h("div", { class: "pages" });
+    const pre = h("div");
+    void findPrerelease(q.papers!).then((p) => { if (p) pre.replaceChildren(prereleaseButton(p)); }).catch(() => 0);
     const msBox = h("div");
     const score = h("input", { type: "number", min: 0, max: q.marks ?? 100, class: "year-input", "aria-label": tr("Your score", "Tu nota") });
     const scorePanel = h("div", { class: "card row", hidden: true },
@@ -138,6 +140,7 @@ async function runSession(root: HTMLElement): Promise<void> {
       ),
       h("h1", {}, `${subjectName(q.papers!.subject)} · ${paperLabel(q.papers!)} · ${q.page_level ? tr("page", "pág.") + " " + q.start_page : "Q" + q.label}`),
       h("p", { class: "muted" }, `${q.marks != null ? `${q.marks} ${tr("marks", "puntos")} · ` : ""}${total != null ? `${tr("Time", "Tiempo")} ${formatClock(total)}` : tr("Marks unknown: the clock counts up", "Puntos desconocidos: el reloj cuenta hacia arriba")}`),
+      pre,
       pages,
       h("div", { class: "row" }, showMs, h("button", { class: "btn btn-ghost", onclick: () => void next() }, tr("Skip", "Saltar"))),
       msBox,

@@ -1,5 +1,5 @@
 import type { PDFDocumentProxy } from "pdfjs-dist/legacy/build/pdf.mjs";
-import { db, isOwner, loadPaper, loadQuestion, markschemeFor, saveMarkschemeRange, type MarkschemePart, loadMyProgress, paperLabel, saveProgress, subjectName, watermarkText, type Paper, type Question, type Tag } from "../data";
+import { db, findPrerelease, isOwner, loadPaper, loadQuestion, markschemeFor, saveMarkschemeRange, type MarkschemePart, loadMyProgress, paperLabel, saveProgress, subjectName, watermarkText, type Paper, type Question, type Tag } from "../data";
 import { tr } from "../i18n";
 import type { SubjectId } from "../lib/detect";
 import { confidenceHint } from "../lib/tagger";
@@ -27,7 +27,7 @@ export async function paperView(root: HTMLElement, id: string): Promise<void> {
   const badge = h("p");
   root.replaceChildren(
     h("p", {}, h("a", { href: "#/library" }, `← ${tr("Library", "Biblioteca")}`)),
-    h("h1", {}, `${subjectName(p.subject)} · ${paperLabel(p)}${p.kind === "markscheme" ? " · " + tr("Markscheme", "Esquema") : ""}`),
+    h("h1", {}, `${subjectName(p.subject)} · ${paperLabel(p)}${p.kind === "markscheme" ? " · " + tr("Markscheme", "Esquema") : p.kind === "prerelease" ? " · " + tr("Pre-release statement", "Declaración de pre-publicación") : ""}`),
     badge,
     pages,
   );
@@ -40,7 +40,7 @@ export async function questionView(root: HTMLElement, id: string): Promise<void>
   root.replaceChildren(spinner(tr("Opening…", "Abriendo…")));
   const q = await loadQuestion(id);
   const paper = q.papers!;
-  const found = await markschemeFor(q);
+  const [found, pre] = await Promise.all([markschemeFor(q), findPrerelease(paper).catch(() => null)]);
   const left = h("div", { class: "pages" });
   const right = h("div", { class: "pages" });
   const badge = h("span");
@@ -48,6 +48,7 @@ export async function questionView(root: HTMLElement, id: string): Promise<void>
     h("p", {}, h("a", { href: "#/" }, `← ${tr("Finder", "Buscador")}`)),
     h("h1", {}, `${subjectName(paper.subject)} · ${paperLabel(paper)} · ${q.page_level ? tr("page", "pág.") + " " + q.start_page : tr("Question", "Pregunta") + " " + q.label}`),
     h("p", { class: "muted" }, `${tr("Pages", "Páginas")} ${q.start_page}–${q.end_page}${q.marks != null ? ` · ${q.marks} ${tr("marks", "puntos")}` : ""}`, badge),
+    pre ? prereleaseButton(pre) : "",
     tagPanel(q),
     await progressPanel(q),
     h("div", { class: "side-by-side" },
@@ -61,6 +62,12 @@ export async function questionView(root: HTMLElement, id: string): Promise<void>
   await showMarkscheme(right, found, width).catch((e) => right.replaceChildren(h("p", { class: "muted" }, errorText(e))));
   badge.replaceChildren(offlineBadge(offlineFiles.has(paper.storage_path) && (!found || offlineFiles.has(found.ms.storage_path))));
   if (isOwner() && found) right.before(msRangeEditor(q, found, right, width));
+}
+
+/** Link to the pre-release statement of a Paper 1 question. */
+export function prereleaseButton(pre: Paper): HTMLElement {
+  return h("p", {}, h("a", { class: "btn btn-small btn-secondary", href: `#/paper/${pre.id}`, target: "_blank", rel: "noopener" },
+    tr("Open pre-release statement", "Abrir declaración de pre-publicación")));
 }
 
 /** Owner: correct which markscheme pages belong to this question. */

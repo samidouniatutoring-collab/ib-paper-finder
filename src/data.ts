@@ -29,7 +29,7 @@ export interface Paper {
   session: string | null;
   timezone: string | null;
   paper_number: number | null;
-  kind: "paper" | "markscheme";
+  kind: "paper" | "markscheme" | "prerelease";
   page_count: number;
   needs_review: boolean;
 }
@@ -160,6 +160,21 @@ export async function findMarkscheme(p: Paper, kind: Paper["kind"] = "markscheme
 
 /** The paper a markscheme belongs to. */
 export const findPaperFor = (ms: Paper) => findMarkscheme(ms, "paper");
+
+/** The pre-release statement of a Paper 1 (same subject, level, year, session, timezone). */
+export function findPrerelease(p: Paper): Promise<Paper | null> {
+  if (p.kind !== "paper" || p.paper_number !== 1) return Promise.resolve(null);
+  return withOffline(`prerelease:${p.id}`, () => findMarkscheme(p, "prerelease"));
+}
+
+/** All pre-release statements of a subject (for linking many Paper 1 questions at once). */
+export function loadPrereleases(subject: string): Promise<Paper[]> {
+  return withOffline(`prereleases:${subject}`, async () => {
+    const { data, error } = await db().from("papers").select("*").eq("kind", "prerelease").eq("subject", subject);
+    if (error) throw error;
+    return (data ?? []) as Paper[];
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Homework

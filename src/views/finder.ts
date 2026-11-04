@@ -1,6 +1,6 @@
-import { loadMyProgress, loadSubjectQuestions, paperLabel, subjectName, type Progress, type Question } from "../data";
+import { loadMyProgress, loadPrereleases, loadSubjectQuestions, paperLabel, type Paper, subjectName, type Progress, type Question } from "../data";
 import { lang, tr } from "../i18n";
-import { SUBJECTS, type SubjectId } from "../lib/detect";
+import { pairKey, SUBJECTS, type SubjectId } from "../lib/detect";
 import { confidenceHint } from "../lib/tagger";
 import { TOPIC_MAPS, tagId, type Topic } from "../lib/topics";
 import { practiceBar, selection } from "./practice";
@@ -10,6 +10,7 @@ import { offlineFiles } from "../offline";
 
 const filters = { subject: "" as string, topic: "" as string, paper: "", level: "", from: "", to: "", hideLow: false };
 const cache = new Map<string, Question[]>();
+const preCache = new Map<string, Map<string, Paper>>();
 
 export function topicName(t: Topic): string {
   return lang === "es" && t.nameEs ? t.nameEs : t.name;
@@ -19,8 +20,17 @@ export async function subjectQuestions(subject: string): Promise<Question[]> {
   if (!cache.has(subject)) cache.set(subject, await loadSubjectQuestions(subject));
   return cache.get(subject)!;
 }
+/** Pre-release statements of a subject by their Paper 1 key (one request per subject). */
+async function subjectPrereleases(subject: string): Promise<Map<string, Paper>> {
+  if (!preCache.has(subject)) {
+    const list = await loadPrereleases(subject).catch(() => [] as Paper[]);
+    preCache.set(subject, new Map(list.map((p) => [pairKey({ ...p, paper_number: 1 }), p])));
+  }
+  return preCache.get(subject)!;
+}
 export function clearQuestionCache(): void {
   cache.clear();
+  preCache.clear();
 }
 
 export async function finderView(root: HTMLElement): Promise<void> {
@@ -46,13 +56,13 @@ async function renderSubject(body: HTMLElement): Promise<void> {
     return;
   }
   body.replaceChildren(spinner(tr("Loading questions…", "Cargando preguntas…")));
-  const [questions, progress] = await Promise.all([subjectQuestions(filters.subject), loadMyProgress()]);
+  const [questions, progress, pre] = await Promise.all([subjectQuestions(filters.subject), loadMyProgress(), subjectPrereleases(filters.subject)]);
   const topics = TOPIC_MAPS[filters.subject as SubjectId];
   const side = h("nav", { class: "topics card" });
   const list = h("div", { class: "questions" });
   const draw = () => {
     side.replaceChildren(...topicList(topics, questions, progress, draw));
-    list.replaceChildren(...questionList(questions, progress, topics, draw));
+    list.replaceChildren(...questionList(questions, progress, topics, draw, pre));
   };
   draw();
   body.replaceChildren(h("div", { class: "finder" }, side, list));
@@ -79,7 +89,7 @@ function topicList(topics: Topic[], qs: Question[], progress: Map<string, Progre
   );
 }
 
-function questionList(qs: Question[], progress: Map<string, Progress>, topics: Topic[], redraw: () => void): HTMLElement[] {
+function questionList(qs: Question[], progress: Map<string, Progress>, topics: Topic[], redraw: () => void, pre: Map<string, Paper>): HTMLElement[] {
   if (!filters.topic) return [h("p", { class: "muted" }, tr("Choose a topic.", "Elige un tema."))];
   const topic = topics.find((t) => t.code === filters.topic)!;
   const input = (key: "from" | "to", ph: string) => {
@@ -128,6 +138,7 @@ function questionList(qs: Question[], progress: Map<string, Progress>, topics: T
           });
           const hint = tag!.source === "owner" ? "owner" : confidenceHint(tag!.confidence);
           const pr = progress.get(q.id);
+          const statement = q.papers!.paper_number === 1 ? pre.get(pairKey(q.papers!)) : undefined;
           return h("li", { class: "qrow" }, box,
             h("a", { href: `#/q/${q.id}` },
               h("strong", {}, `${paperLabel(q.papers!)} · ${q.page_level ? tr("page", "pág.") + " " + q.start_page : "Q" + q.label}`),
@@ -136,6 +147,7 @@ function questionList(qs: Question[], progress: Map<string, Progress>, topics: T
             h("span", { class: `badge conf-${hint}`, title: tr("How sure the tag is", "Seguridad de la etiqueta") }, hint === "owner" ? tr("checked", "revisado") : tr(hint, { high: "alta", medium: "media", low: "baja" }[hint])),
             offlineFiles.has(q.papers!.storage_path) ? h("span", { class: "badge badge-offline" }, tr("Offline", "Sin conexión")) : "",
             pr?.done ? h("span", { class: "badge badge-ok" }, pr.score != null ? `✓ ${pr.score}${q.marks ? "/" + q.marks : ""}` : "✓") : "",
+            statement ? h("a", { class: "btn btn-small btn-secondary", href: `#/paper/${statement.id}`, target: "_blank", rel: "noopener" }, tr("Open pre-release statement", "Abrir declaración de pre-publicación")) : "",
           );
         }))
       : h("p", { class: "muted" }, tr("No questions match.", "Ninguna pregunta coincide.")),

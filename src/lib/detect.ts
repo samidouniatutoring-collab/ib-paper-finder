@@ -14,7 +14,7 @@ export const SUBJECTS: { id: SubjectId; name: string; nameEs: string }[] = [
 export type Level = "HL" | "SL" | "HL/SL";
 export type Session = "May" | "November";
 export type Timezone = "TZ0" | "TZ1" | "TZ2";
-export type Kind = "paper" | "markscheme";
+export type Kind = "paper" | "markscheme" | "prerelease";
 
 export interface Detected {
   subject: SubjectId | null;
@@ -103,6 +103,13 @@ function detectKind(s: string, strict = false): Kind {
     : "paper";
 }
 
+// Business Management Paper 1 pre-release statement. Page text is only trusted near the top (the title),
+// because the Paper 1 exam itself can mention the pre-release statement in its instructions.
+const PRERELEASE = /\b(pre ?release(d)?( statement)?|pre ?seen)\b/;
+function isPrerelease(s: string, strict = false): boolean {
+  return PRERELEASE.test(strict ? s.slice(0, 300) : s);
+}
+
 /** Combine file name (preferred) and first-page text (fallback) into one result. */
 export function detectPaper(fileName: string, firstPageText = ""): Detected {
   const base = fileName.split(/[\\/]/).pop() ?? fileName;
@@ -110,18 +117,25 @@ export function detectPaper(fileName: string, firstPageText = ""): Detected {
   const t = normalise(firstPageText.slice(0, 2000));
   const fy = detectSessionYear(f);
   const ty = detectSessionYear(t, true);
+  // Markscheme wins over pre-release, which wins over paper. A pre-release statement is always Paper 1.
+  const kind: Kind =
+    detectKind(f) === "markscheme" || detectKind(t, true) === "markscheme"
+      ? "markscheme"
+      : isPrerelease(f) || isPrerelease(t, true)
+        ? "prerelease"
+        : "paper";
   return {
     subject: detectSubject(f) ?? detectSubject(t),
     level: detectLevel(f) ?? detectLevel(t),
     year: fy.year ?? ty.year,
     session: fy.session ?? ty.session,
     timezone: detectTimezone(f) ?? detectTimezone(t),
-    paperNumber: detectPaperNumber(f) ?? detectPaperNumber(t, true),
-    kind: detectKind(f) === "markscheme" || detectKind(t, true) === "markscheme" ? "markscheme" : "paper",
+    paperNumber: kind === "prerelease" ? 1 : detectPaperNumber(f) ?? detectPaperNumber(t, true),
+    kind,
   };
 }
 
-/** Key used to pair a paper with its markscheme. */
+/** Key used to pair a paper with its markscheme. Pre-release statements must not be matched with it. */
 export function pairKey(p: {
   subject: string | null;
   level: string | null;

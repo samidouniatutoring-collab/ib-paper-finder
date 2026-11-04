@@ -2,6 +2,30 @@ import { describe, expect, it } from "vitest";
 import { detectPaper, pairKey } from "../src/lib/detect";
 
 describe("detectPaper", () => {
+  it("detects pre-release statements as Paper 1", () => {
+    for (const name of [
+      "Business_management_paper_1_pre-release_statement_HL_SL_May_2024.pdf",
+      "M24 Business Management prerelease.pdf",
+      "Business management pre release N23 TZ1.pdf",
+      "BM_pre-seen_case_study_2025.pdf",
+    ]) expect(detectPaper(name), name).toMatchObject({ subject: "business", kind: "prerelease", paperNumber: 1 });
+    expect(detectPaper("Business_management_paper_2_pre-release.pdf").paperNumber).toBe(1);
+    expect(detectPaper("May 2024 TZ2", "Business management\nPaper 1 pre-release statement\nCase study: Example Co")).toMatchObject({
+      kind: "prerelease", paperNumber: 1, year: 2024, session: "May", timezone: "TZ2",
+    });
+  });
+
+  it("markscheme wins over pre-release; pre-release wins over paper", () => {
+    expect(detectPaper("Business_management_paper_1_pre-release_markscheme.pdf").kind).toBe("markscheme");
+    expect(detectPaper("Business_management_paper_1__HL.pdf", "Paper 1 pre-release statement").kind).toBe("prerelease");
+    expect(detectPaper("Business_management_paper_1__HL.pdf", "Markscheme\npre-release").kind).toBe("markscheme");
+  });
+
+  it("ignores pre-release mentions deep in a Paper 1 cover page", () => {
+    const cover = "Business management\nHigher level\nPaper 1\n" + "Instructions to candidates. ".repeat(20) + "A clean copy of the pre-release statement is required.";
+    expect(detectPaper("Business_management_paper_1__HL.pdf", cover).kind).toBe("paper");
+  });
+
   it("reads common IB file names", () => {
     expect(detectPaper("Business_management_paper_1__HL.pdf")).toMatchObject({
       subject: "business", level: "HL", paperNumber: 1, kind: "paper",

@@ -136,8 +136,9 @@ function renderTree(el: HTMLElement, papers: Paper[]): void {
   const counts = new Map<string, number>();
   for (const p of papers) {
     const k = pairKey(p);
+    // Pre-release statements are kept out of paper/markscheme pairing (they share Paper 1's key).
     if (p.kind === "markscheme") ms.set(k, [...(ms.get(k) ?? []), p]);
-    else counts.set(k, (counts.get(k) ?? 0) + 1);
+    else if (p.kind === "paper") counts.set(k, (counts.get(k) ?? 0) + 1);
   }
   const bySubject = new Map<string, Paper[]>();
   for (const p of papers) {
@@ -165,7 +166,7 @@ function renderTree(el: HTMLElement, papers: Paper[]): void {
                 (counts.get(k) ?? 0) > 1 && p.kind === "paper" ? tr("Possible duplicate", "Posible duplicado") : "",
                 p.needs_review ? tr("Check details", "Revisar datos") : "",
               ].filter(Boolean);
-              return paperRow(p, pairs[0], flags);
+              return paperRow(p, pairs[0], flags, p.kind === "prerelease");
             }),
         ),
       ),
@@ -174,11 +175,12 @@ function renderTree(el: HTMLElement, papers: Paper[]): void {
   el.replaceChildren(...sections);
 }
 
-function paperRow(p: Paper, ms: Paper | undefined, flags: string[]): HTMLElement {
+function paperRow(p: Paper, ms: Paper | undefined, flags: string[], prerelease = false): HTMLElement {
   const row = h("div", { class: "paper-row" },
     h("div", {},
       h("a", { href: `#/paper/${p.id}` }, paperLabel(p)),
       ms ? h("a", { class: "ms-link", href: `#/paper/${ms.id}` }, tr("Markscheme", "Esquema")) : "",
+      prerelease ? h("span", { class: "badge" }, tr("Pre-release", "Pre-publicación")) : "",
       ...flags.map((f) => h("span", { class: "badge badge-warn" }, f)),
       offlineFiles.has(p.storage_path) ? h("span", { class: "badge badge-offline" }, tr("Available offline", "Disponible sin conexión")) : "",
       isOwner() ? h("div", { class: "small muted" }, p.original_name) : "",
@@ -209,7 +211,7 @@ function editPaper(p: Paper): void {
     field(tr("Session", "Convocatoria"), select("session", [["May", tr("May", "Mayo")], ["November", tr("November", "Noviembre")]], p.session)),
     field(tr("Timezone", "Zona horaria"), select("timezone", [["TZ0", "TZ0"], ["TZ1", "TZ1"], ["TZ2", "TZ2"]], p.timezone)),
     field(tr("Paper number", "Número de prueba"), select("paper_number", [["1", "1"], ["2", "2"], ["3", "3"]], p.paper_number)),
-    field(tr("Type", "Tipo"), select("kind", [["paper", tr("Paper", "Examen")], ["markscheme", tr("Markscheme", "Esquema")]], p.kind)),
+    field(tr("Type", "Tipo"), select("kind", [["paper", tr("Paper", "Examen")], ["markscheme", tr("Markscheme", "Esquema")], ["prerelease", tr("Pre-release statement", "Declaración de pre-publicación")]], p.kind)),
     h("label", { class: "check" }, h("input", { type: "checkbox", name: "reanalyse" }), tr("Re-split and re-tag questions now (replaces manual tags)", "Volver a dividir y etiquetar ahora (sustituye las etiquetas manuales)")),
     h("div", { class: "row" },
       h("button", { class: "btn", value: "save" }, tr("Save", "Guardar")),
@@ -231,19 +233,25 @@ function editPaper(p: Paper): void {
         if (error) throw error;
       } else if (action === "save") {
         const v = (k: string) => (fd.get(k) as string) || null;
+        const kind = v("kind") ?? "paper";
         const update = {
           subject: v("subject"),
           level: v("level"),
           year: v("year") ? Number(v("year")) : null,
           session: v("session"),
           timezone: v("timezone"),
-          paper_number: v("paper_number") ? Number(v("paper_number")) : null,
-          kind: v("kind") ?? "paper",
+          // A pre-release statement always belongs to Paper 1.
+          paper_number: kind === "prerelease" ? 1 : v("paper_number") ? Number(v("paper_number")) : null,
+          kind,
           needs_review: false,
         };
         const { error } = await db().from("papers").update(update).eq("id", p.id);
         if (error) throw error;
-        if (fd.get("reanalyse")) {
+        if (kind === "prerelease" && p.kind !== "prerelease") {
+          // Not split into questions: drop any questions (their tags and markscheme ranges cascade).
+          const { error: qErr } = await db().from("questions").delete().eq("paper_id", p.id);
+          if (qErr) throw qErr;
+        } else if (fd.get("reanalyse")) {
           toast(tr("Re-analysing…", "Analizando…"));
           const n = await reanalyse({ ...p, ...update } as Paper);
           await linkMarkscheme({ ...p, ...update } as Paper).catch(() => 0);

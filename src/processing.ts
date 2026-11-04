@@ -225,6 +225,7 @@ async function pageTexts(p: Paper): Promise<string[]> {
  * markscheme pages. Ranges the owner corrected by hand are kept. Returns how many questions were mapped.
  */
 export async function linkMarkscheme(p: Paper, pages?: string[]): Promise<number> {
+  if (p.kind === "prerelease") return 0;
   const paper = p.kind === "paper" ? p : await findPaperFor(p);
   const ms = p.kind === "markscheme" ? p : await findMarkscheme(p);
   if (!paper || !ms) return 0;
