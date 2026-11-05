@@ -60,7 +60,7 @@ export async function peopleView(root: HTMLElement): Promise<void> {
     h("section", { class: "card stack" }, h("h2", {}, tr("Settings", "Ajustes")),
       h("label", { class: "field" }, h("span", {}, tr("Only allow requests from this email domain (optional)", "Solo aceptar solicitudes de este dominio (opcional)")), domain),
       h("label", { class: "check" }, downloads, tr("Allow students to download practice-set PDFs", "Permitir a los alumnos descargar las prácticas en PDF")),
-      h("label", { class: "field" }, h("span", {}, tr("Practice timer: minutes per mark, with optional per-subject values, e.g. {\"minutesPerMark\": 1.5, \"subjects\": {\"math-ai\": 1.2}}", "Cronómetro de práctica: minutos por punto, con valores por asignatura opcionales, p. ej. {\"minutesPerMark\": 1.5, \"subjects\": {\"math-ai\": 1.2}}")), practice),
+
       h("button", { class: "btn", onclick: saveSettings }, tr("Save settings", "Guardar ajustes")),
     ),
   );

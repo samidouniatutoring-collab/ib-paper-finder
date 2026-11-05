@@ -72,7 +72,7 @@ export async function fullPaperView(root: HTMLElement, id: string): Promise<void
     h("div", { class: "row", style: "justify-content: space-between" },
       h("a", { href: "#/" }, `← ${tr("Full papers", "Exámenes completos")}`),
       h("div", { class: "row" }, pause, clock)),
-    h("h1", {}, `${subjectName(p.subject)} · ${paperLabel(p)}`),
+    h("h1", {}, `${tr("Exam conditions", "Condiciones de examen")}: ${subjectName(p.subject)} · ${paperLabel(p)}`),
     h("p", { class: "muted" },
       [totalMarks ? `${totalMarks} ${tr("marks", "puntos")}` : "", minutes ? `${tr("Time", "Tiempo")} ${formatClock(minutes * 60)}` : tr("No official time set: the clock counts up", "Sin tiempo oficial: el reloj cuenta hacia arriba")].filter(Boolean).join(" · ")),
     pre ? prereleaseButton(pre) : "",

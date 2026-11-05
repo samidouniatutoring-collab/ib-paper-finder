@@ -182,7 +182,7 @@ async function renderPapers(body: HTMLElement): Promise<void> {
         .map((p) => h("li", { class: "row" },
           h("strong", {}, paperLabel(p)),
           withMs.has(pairKey(p)) ? "" : h("span", { class: "badge" }, tr("No markscheme", "Sin esquema")),
-          h("a", { class: "btn btn-small", href: `#/full/${p.id}` }, tr("Practise full paper", "Practicar examen completo")),
+          h("a", { class: "btn btn-small", href: `#/full/${p.id}` }, tr("Exam conditions", "Condiciones de examen")),
           h("a", { class: "btn btn-small btn-secondary", href: `#/paper/${p.id}` }, tr("Just view", "Solo ver")),
         ))),
     )));

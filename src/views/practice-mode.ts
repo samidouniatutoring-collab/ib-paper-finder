@@ -2,7 +2,7 @@ import { COURSES, inCourse } from "../lib/courses";
 import { findPrerelease, loadMyProgress, paperLabel, saveProgress, state, subjectName, type Question } from "../data";
 import { tr } from "../i18n";
 import { SUBJECTS, type SubjectId } from "../lib/detect";
-import { formatClock, parsePracticeSettings, pickPracticeQuestion, practicePool, timerSeconds, type PracticeFilter } from "../lib/practice";
+import { formatClock, pickPracticeQuestion, practicePool, type PracticeFilter } from "../lib/practice";
 import { TOPIC_MAPS, tagId } from "../lib/topics";
 import { loadPaperDoc } from "../pdf";
 import { errorText, h, spinner, toast } from "../ui";
@@ -46,8 +46,8 @@ export async function practiceModeView(root: HTMLElement): Promise<void> {
   };
   root.replaceChildren(
     h("h1", {}, tr("Practice", "Práctica")),
-    h("p", { class: "muted" }, tr("Random questions you haven't done yet, with a timer. Show the markscheme, score yourself, then go to the next one.",
-      "Preguntas al azar que aún no has hecho, con cronómetro. Mira el esquema, ponte nota y pasa a la siguiente.")),
+    h("p", { class: "muted" }, tr("Untimed: random questions you haven't done yet. Show the markscheme, score yourself, then go to the next one. For timed work, do a full paper in exam conditions (Finder → Full papers).",
+      "Sin límite de tiempo: preguntas al azar que aún no has hecho. Mira el esquema, ponte nota y pasa a la siguiente. Para practicar con tiempo, haz un examen completo en condiciones de examen (Buscador → Exámenes completos).")),
     h("div", { class: "card stack" },
       h("div", { class: "row" }, subject, paper),
       topicsBox,
@@ -69,7 +69,6 @@ async function runSession(root: HTMLElement): Promise<void> {
     return;
   }
   const filter: PracticeFilter = { topics: choice.topics, paper: choice.paper ? Number(choice.paper) : null, level: null, includeDone: choice.includeDone };
-  const settings = parsePracticeSettings(state.settings.practice_settings);
   const seen = new Set<string>();
   const done = () => new Set([...progress.values()].filter((p) => p.done).map((p) => p.question_id));
   let count = 0;
@@ -88,7 +87,8 @@ async function runSession(root: HTMLElement): Promise<void> {
     seen.add(q.id);
     count++;
     const left = practicePool(qs, filter, done(), seen).length;
-    const total = timerSeconds(q.marks, q.papers!.subject, settings, q.papers);
+    // Untimed practice: a stopwatch only. Timed work is the full paper in exam conditions.
+    const total: number | null = null;
     const startedAt = Date.now();
     const clock = h("span", { class: "clock", role: "timer", "aria-live": "off" });
     const tick = () => {
@@ -140,7 +140,7 @@ async function runSession(root: HTMLElement): Promise<void> {
         clock,
       ),
       h("h1", {}, `${subjectName(q.papers!.subject)} · ${paperLabel(q.papers!)} · ${q.page_level ? tr("page", "pág.") + " " + q.start_page : "Q" + q.label}`),
-      h("p", { class: "muted" }, `${q.marks != null ? `${q.marks} ${tr("marks", "puntos")} · ` : ""}${total != null ? `${tr("Time", "Tiempo")} ${formatClock(total)}` : tr("Marks unknown: the clock counts up", "Puntos desconocidos: el reloj cuenta hacia arriba")}`),
+      h("p", { class: "muted" }, `${q.marks != null ? `${q.marks} ${tr("marks", "puntos")} · ` : ""}${tr("Untimed: the clock shows how long you've taken", "Sin límite: el reloj muestra cuánto llevas")}`),
       pre,
       pages,
       h("div", { class: "row" }, showMs, h("button", { class: "btn btn-ghost", onclick: () => void next() }, tr("Skip", "Saltar"))),
