@@ -18,7 +18,7 @@ export const COURSES: Record<SubjectId, Course> = {
   psychology: { level: "HL", papers: [1, 2, 3], examMinutes: {} },
   sehs: { level: "SL", papers: [1, 2], examMinutes: {} },
   "spanish-b": { level: "SL", papers: [1, 2], examMinutes: {} },
-  "english-a-ll": { level: null, papers: [1, 2], examMinutes: {} },
+  "english-a-ll": { level: "HL", papers: [1, 2], examMinutes: {} },
 };
 
 /** True when a paper belongs to the course (unknown level counts as a match; "HL/SL" papers match both). */
