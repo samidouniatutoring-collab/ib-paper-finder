@@ -1,3 +1,4 @@
+import "./lib/stream-polyfill";
 import "./styles.css";
 import { supabase } from "./config";
 import { db, isOwner, state, type Profile, type Settings } from "./data";

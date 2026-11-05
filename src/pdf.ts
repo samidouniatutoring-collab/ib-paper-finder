@@ -1,6 +1,6 @@
 // pdf.js helpers: text extraction (owner processing) and canvas rendering with a watermark.
 import type { PDFDocumentProxy } from "pdfjs-dist/legacy/build/pdf.mjs";
-import workerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
+import "./lib/stream-polyfill";
 import { BUCKET, SIGNED_URL_SECONDS, supabase } from "./config";
 import { tr } from "./i18n";
 import { deleteFile, getFile, isNetworkError, putFile } from "./offline";
@@ -10,7 +10,8 @@ let lib: Promise<PdfJs> | null = null;
 
 function pdfjs(): Promise<PdfJs> {
   lib ??= import("pdfjs-dist/legacy/build/pdf.mjs").then((m) => {
-    m.GlobalWorkerOptions.workerSrc = workerUrl;
+    // Our own worker so the Safari stream fix runs inside it too.
+    m.GlobalWorkerOptions.workerPort = new Worker(new URL("./pdfjs.worker.ts", import.meta.url), { type: "module" });
     return m;
   });
   return lib;
