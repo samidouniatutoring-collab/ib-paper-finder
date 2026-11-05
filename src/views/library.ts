@@ -39,7 +39,7 @@ function uploadPanel(papers: Paper[]): HTMLElement {
       const results = await processFiles(inputs, papers.map((p) => p.file_hash), (done, total, last) => {
         bar.value = done;
         status.textContent = `${done} / ${total} · ${last.name}`;
-      });
+      }, (msg) => { status.textContent = msg; });
       lastResults = results;
       showReport(report, results);
       toast(tr("Upload finished", "Subida terminada"));

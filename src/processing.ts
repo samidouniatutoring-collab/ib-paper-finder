@@ -1,5 +1,6 @@
 // Owner-side processing: hash + analyse in a Web Worker, text via pdf.js (its own worker), upload to the private bucket.
 import JSZip from "jszip";
+import { tr } from "./i18n";
 import type { Analysis, WorkerRequest } from "./analyse.worker";
 import { BUCKET } from "./config";
 import { db, findMarkscheme, findPaperFor, type Paper } from "./data";
@@ -105,14 +106,16 @@ function needsReview(d: Detected): boolean {
   return !d.subject || !d.year || !d.paperNumber || !d.session;
 }
 
-async function processOne(file: InputFile, knownHashes: Set<string>): Promise<FileResult> {
+async function processOne(file: InputFile, knownHashes: Set<string>, onStatus?: (msg: string) => void): Promise<FileResult> {
   const bytes = await file.bytes();
   const hash = await call<string>({ type: "hash", bytes: bytes.slice(0) });
   if (knownHashes.has(hash)) return { name: file.name, status: "duplicate" };
   knownHashes.add(hash);
 
   const doc = await openPdf(bytes);
-  const pages = await extractPages(doc);
+  const pages = await extractPages(doc, (i, n, ocr) => {
+    if (ocr) onStatus?.(`${file.name}: ${tr("reading scanned page", "leyendo página escaneada")} ${i} / ${n}`);
+  });
   const pageCount = doc.numPages;
   await doc.destroy();
   const analysis = await call<Analysis>({ type: "analyse", name: file.name, pages });
@@ -156,6 +159,7 @@ export async function processFiles(
   files: InputFile[],
   existingHashes: string[],
   onProgress: (done: number, total: number, last: FileResult) => void,
+  onStatus?: (msg: string) => void,
 ): Promise<FileResult[]> {
   const known = new Set(existingHashes);
   const results: FileResult[] = [];
@@ -165,7 +169,7 @@ export async function processFiles(
       const f = files[next++];
       let r: FileResult;
       try {
-        r = await processOne(f, known);
+        r = await processOne(f, known, onStatus);
       } catch (e) {
         console.error("Upload failed:", f.name, e);
         const msg =
@@ -271,6 +275,11 @@ export async function redetect(p: Paper): Promise<boolean> {
   await doc.destroy();
   const a = await call<Analysis>({ type: "analyse", name: p.original_name, pages });
   const d = a.detected;
+  // Scanned papers uploaded before OCR existed have no questions yet: split them now.
+  if (a.questions.length) {
+    const { count } = await db().from("questions").select("id", { count: "exact", head: true }).eq("paper_id", p.id);
+    if (!count) await saveQuestions(p.id, a);
+  }
   const merged: Detected = {
     subject: (p.subject as Detected["subject"]) ?? d.subject,
     level: (p.level as Detected["level"]) ?? d.level,

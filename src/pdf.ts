@@ -23,8 +23,14 @@ export async function openPdf(bytes: ArrayBuffer): Promise<PDFDocumentProxy> {
   return m.getDocument({ data: new Uint8Array(bytes.slice(0)) }).promise;
 }
 
-/** Text of every page, one line per text row. */
-export async function extractPages(doc: PDFDocumentProxy): Promise<string[]> {
+/** Pages with fewer characters than this are treated as scanned (a picture) and read with OCR. */
+const SCANNED_BELOW = 30;
+
+/**
+ * Text of every page, one line per text row. Scanned pages (pictures with no text) are read with OCR,
+ * so scanned papers are sorted, split into questions and searchable like normal ones. Slower: a few seconds a page.
+ */
+export async function extractPages(doc: PDFDocumentProxy, onPage?: (page: number, total: number, ocr: boolean) => void): Promise<string[]> {
   const pages: string[] = [];
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i);
@@ -39,8 +45,14 @@ export async function extractPages(doc: PDFDocumentProxy): Promise<string[]> {
       if (item.hasEOL) out += "\n";
       lastY = y;
     }
-    pages.push(out);
     page.cleanup();
+    const scanned = out.replace(/\s/g, "").length < SCANNED_BELOW;
+    onPage?.(i, doc.numPages, scanned);
+    if (scanned) {
+      const { ocrPage } = await import("./ocr");
+      out = await ocrPage(doc, i);
+    }
+    pages.push(out);
   }
   return pages;
 }
