@@ -87,7 +87,7 @@ async function runSession(root: HTMLElement): Promise<void> {
     seen.add(q.id);
     count++;
     const left = practicePool(qs, filter, done(), seen).length;
-    const total = timerSeconds(q.marks, q.papers!.subject, settings);
+    const total = timerSeconds(q.marks, q.papers!.subject, settings, q.papers);
     const startedAt = Date.now();
     const clock = h("span", { class: "clock", role: "timer", "aria-live": "off" });
     const tick = () => {

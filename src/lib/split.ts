@@ -40,6 +40,16 @@ export function detectMarks(text: string): number | null {
  * so numbered lists inside a question don't break the split. Falls back to one item per page when
  * fewer than two questions are found.
  */
+/**
+ * True when nothing but the page header comes before line `line` on this page, e.g. "– 4 –", "2226 – 5218",
+ * "M26/5/MATAI/SP1/ENG/TZ1/XX" or a barcode label: none of those have lowercase words.
+ */
+export function onlyHeaderBefore(pageText: string, line: number): boolean {
+  if (line === 0) return true;
+  const before = pageText.split(/\r?\n/).slice(0, line).filter((l) => l.trim());
+  return before.length <= 4 && before.every((l) => !/[a-z]{3,}/.test(l));
+}
+
 export function splitQuestions(pages: string[]): SplitQuestion[] {
   const starts: { number: number; page: number; line: number }[] = [];
   let expected = 1;
@@ -71,7 +81,7 @@ export function splitQuestions(pages: string[]): SplitQuestion[] {
     const next = starts[i + 1];
     // A question ends on the page where the next one starts (or the page before, if the next starts at the top).
     let endPage = next ? next.page : pages.length;
-    if (next && next.line === 0 && next.page > s.page) endPage = next.page - 1;
+    if (next && next.page > s.page && onlyHeaderBefore(pages[next.page - 1], next.line)) endPage = next.page - 1;
     const text = collect(pages, s, next);
     return {
       number: s.number,
