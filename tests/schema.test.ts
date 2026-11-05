@@ -21,10 +21,20 @@ describe("schema.sql access rules", () => {
 
   it("only the owner can write library data", () => {
     const writes = policies.filter(
-      (p) => LIBRARY.some((t) => p.includes(` on ${t} `)) && /for (all|insert|update|delete)/.test(p),
+      (p) => LIBRARY.some((t) => p.includes(` on ${t} `)) && /for (all|insert|update|delete)/.test(p) && !p.includes('"submissions bucket: own"'),
     );
     expect(writes.length).toBeGreaterThanOrEqual(6);
     for (const p of writes) expect(p).toContain("is_owner()");
+  });
+
+  it("students can only write submissions in their own folder, for homework assigned to them", () => {
+    const own = policies.find((p) => p.includes('"submissions bucket: own"'))!;
+    expect(own).toContain("bucket_id = 'submissions'");
+    expect(own).toContain("(storage.foldername(name))[1] = auth.uid()::text");
+    expect(own).toMatch(/is_assigned\(\(\(storage\.foldername\(name\)\)\[2\]\)::uuid\)/);
+    expect(own.match(/is_assigned/g)?.length).toBe(2);
+    const table = policies.find((p) => p.includes('"submissions: own"'))!;
+    expect(table).toContain("user_id = auth.uid() and public.is_assigned(set_id)");
   });
 
   it("keeps the papers bucket private and enables RLS everywhere", () => {

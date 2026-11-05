@@ -439,5 +439,7 @@ create policy "submissions bucket: owner" on storage.objects for all to authenti
   using (bucket_id = 'submissions' and public.is_owner()) with check (bucket_id = 'submissions' and public.is_owner());
 drop policy if exists "submissions bucket: own" on storage.objects;
 create policy "submissions bucket: own" on storage.objects for all to authenticated
-  using (bucket_id = 'submissions' and (storage.foldername(name))[1] = auth.uid()::text and public.is_approved())
-  with check (bucket_id = 'submissions' and (storage.foldername(name))[1] = auth.uid()::text and public.is_approved());
+  using (bucket_id = 'submissions' and (storage.foldername(name))[1] = auth.uid()::text and public.is_approved()
+    and public.is_assigned(((storage.foldername(name))[2])::uuid))
+  with check (bucket_id = 'submissions' and (storage.foldername(name))[1] = auth.uid()::text and public.is_approved()
+    and public.is_assigned(((storage.foldername(name))[2])::uuid));
