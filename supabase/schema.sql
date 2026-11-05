@@ -487,5 +487,5 @@ drop policy if exists "ms ranges: approved read" on public.markscheme_ranges;
 create policy "ms ranges: approved read" on public.markscheme_ranges for select to authenticated using (public.can_see_question(question_id));
 drop policy if exists "papers bucket: approved read" on storage.objects;
 create policy "papers bucket: approved read" on storage.objects for select to authenticated
-  using (bucket_id = 'papers' and public.is_approved()
-    and exists (select 1 from public.papers p where p.storage_path = name and public.can_see_paper(p.id)));
+  using (bucket_id = 'papers' and (public.is_owner() or (public.is_approved()
+    and exists (select 1 from public.papers p where p.storage_path = name and public.can_see_paper(p.id)))));
