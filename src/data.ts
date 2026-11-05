@@ -10,6 +10,9 @@ export interface Profile {
   status: "pending" | "approved" | "removed";
   role: "student" | "owner";
   created_at: string;
+  /** "homework": only the papers behind their homework. "full": every paper in `subjects` (null = all). */
+  access?: "homework" | "full";
+  subjects?: string[] | null;
 }
 
 export interface Settings {
@@ -67,6 +70,8 @@ export const state: { profile: Profile | null; settings: Settings } = {
 };
 
 export const isOwner = () => state.profile?.role === "owner";
+/** Homework-only people see Homework and Progress, not the Finder, Practice or Library. */
+export const homeworkOnly = () => !isOwner() && (state.profile?.access ?? "homework") === "homework";
 export const canDownload = () => isOwner() || state.settings.allow_downloads;
 export const watermarkText = () =>
   `Shared with ${state.profile?.full_name || state.profile?.email || ""} · for tutoring students only`;

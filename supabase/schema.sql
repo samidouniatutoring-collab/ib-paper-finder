@@ -175,20 +175,17 @@ $$;
 grant execute on function public.signup_domain() to anon, authenticated;
 
 -- library tables: approved users read, owner writes
-drop policy if exists "papers: approved read" on public.papers;
-create policy "papers: approved read" on public.papers for select to authenticated using (public.is_approved());
+-- (read rule: see "Access per person" at the end)
 drop policy if exists "papers: owner write" on public.papers;
 create policy "papers: owner write" on public.papers for all to authenticated
   using (public.is_owner()) with check (public.is_owner());
 
-drop policy if exists "questions: approved read" on public.questions;
-create policy "questions: approved read" on public.questions for select to authenticated using (public.is_approved());
+-- (read rule: see "Access per person" at the end)
 drop policy if exists "questions: owner write" on public.questions;
 create policy "questions: owner write" on public.questions for all to authenticated
   using (public.is_owner()) with check (public.is_owner());
 
-drop policy if exists "tags: approved read" on public.question_tags;
-create policy "tags: approved read" on public.question_tags for select to authenticated using (public.is_approved());
+-- (read rule: see "Access per person" at the end)
 drop policy if exists "tags: owner write" on public.question_tags;
 create policy "tags: owner write" on public.question_tags for all to authenticated
   using (public.is_owner()) with check (public.is_owner());
@@ -205,9 +202,7 @@ create policy "progress: own rows" on public.progress for all to authenticated
 insert into storage.buckets (id, name, public) values ('papers', 'papers', false)
 on conflict (id) do update set public = false;
 
-drop policy if exists "papers bucket: approved read" on storage.objects;
-create policy "papers bucket: approved read" on storage.objects for select to authenticated
-  using (bucket_id = 'papers' and public.is_approved());
+-- (read rule: see "Access per person" at the end)
 drop policy if exists "papers bucket: owner insert" on storage.objects;
 create policy "papers bucket: owner insert" on storage.objects for insert to authenticated
   with check (bucket_id = 'papers' and public.is_owner());
@@ -390,8 +385,7 @@ create table if not exists public.markscheme_ranges (
 );
 alter table public.markscheme_ranges enable row level security;
 revoke all on public.markscheme_ranges from anon;
-drop policy if exists "ms ranges: approved read" on public.markscheme_ranges;
-create policy "ms ranges: approved read" on public.markscheme_ranges for select to authenticated using (public.is_approved());
+-- (read rule: see "Access per person" at the end)
 drop policy if exists "ms ranges: owner write" on public.markscheme_ranges;
 create policy "ms ranges: owner write" on public.markscheme_ranges for all to authenticated
   using (public.is_owner()) with check (public.is_owner());
@@ -443,3 +437,55 @@ create policy "submissions bucket: own" on storage.objects for all to authentica
     and public.is_assigned(((storage.foldername(name))[2])::uuid))
   with check (bucket_id = 'submissions' and (storage.foldername(name))[1] = auth.uid()::text and public.is_approved()
     and public.is_assigned(((storage.foldername(name))[2])::uuid));
+
+-- ---------------------------------------------------------------------------
+-- Access per person: "homework" = only the papers behind the homework assigned to them (and their markschemes /
+-- pre-release statements); "full" = every paper in the subjects ticked for them (subjects null = all subjects).
+-- The owner sees everything. Only the owner can change these (profiles: owner updates).
+-- ---------------------------------------------------------------------------
+alter table public.profiles add column if not exists access text not null default 'homework';
+alter table public.profiles drop constraint if exists profiles_access_check;
+alter table public.profiles add constraint profiles_access_check check (access in ('homework', 'full'));
+alter table public.profiles add column if not exists subjects text[];
+
+create or replace function public.can_see_paper(p_id uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select case
+    when public.is_owner() then true
+    when not public.is_approved() then false
+    when me.access = 'full' then me.subjects is null or p.subject = any (me.subjects)
+    else exists (
+      select 1
+      from public.homework_assignments ha
+      join public.homework_items hi on hi.set_id = ha.set_id
+      join public.questions q on q.id = hi.question_id
+      join public.papers hp on hp.id = q.paper_id
+      where ha.user_id = auth.uid()
+        and hp.subject is not distinct from p.subject and hp.level is not distinct from p.level
+        and hp.year is not distinct from p.year and hp.session is not distinct from p.session
+        and hp.timezone is not distinct from p.timezone and hp.paper_number is not distinct from p.paper_number
+    )
+  end
+  from public.papers p, public.profiles me
+  where p.id = p_id and me.id = auth.uid();
+$$;
+
+create or replace function public.can_see_question(q_id uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce((select public.can_see_paper(paper_id) from public.questions where id = q_id), false);
+$$;
+revoke all on function public.can_see_paper(uuid), public.can_see_question(uuid) from public, anon;
+grant execute on function public.can_see_paper(uuid), public.can_see_question(uuid) to authenticated;
+
+drop policy if exists "papers: approved read" on public.papers;
+create policy "papers: approved read" on public.papers for select to authenticated using (public.can_see_paper(id));
+drop policy if exists "questions: approved read" on public.questions;
+create policy "questions: approved read" on public.questions for select to authenticated using (public.can_see_paper(paper_id));
+drop policy if exists "tags: approved read" on public.question_tags;
+create policy "tags: approved read" on public.question_tags for select to authenticated using (public.can_see_question(question_id));
+drop policy if exists "ms ranges: approved read" on public.markscheme_ranges;
+create policy "ms ranges: approved read" on public.markscheme_ranges for select to authenticated using (public.can_see_question(question_id));
+drop policy if exists "papers bucket: approved read" on storage.objects;
+create policy "papers bucket: approved read" on storage.objects for select to authenticated
+  using (bucket_id = 'papers' and public.is_approved()
+    and exists (select 1 from public.papers p where p.storage_path = name and public.can_see_paper(p.id)));

@@ -1,7 +1,7 @@
 import "./lib/stream-polyfill";
 import "./styles.css";
 import { supabase } from "./config";
-import { db, isOwner, state, type Profile, type Settings } from "./data";
+import { db, homeworkOnly, isOwner, state, type Profile, type Settings } from "./data";
 import { lang, setLang, tr } from "./i18n";
 import { clearOffline, getJson, initOffline, isNetworkError, offlineUser, setOfflineUser, withOffline } from "./offline";
 import { errorText, h } from "./ui";
@@ -22,7 +22,9 @@ let recovering = false;
 
 function header(signedIn: boolean): HTMLElement {
   const links: [string, string][] = signedIn && state.profile?.status === "approved"
-    ? [["#/homework", tr("Homework", "Deberes")], ["#/", tr("Finder", "Buscador")], ["#/practice", tr("Practice", "Práctica")], ["#/library", tr("Library", "Biblioteca")], ["#/progress", tr("Progress", "Progreso")], ...(isOwner() ? [["#/marking", tr("Marking", "Corregir")] as [string, string], ["#/people", tr("People", "Personas")] as [string, string]] : [])]
+    ? homeworkOnly()
+      ? [["#/homework", tr("Homework", "Deberes")], ["#/progress", tr("Progress", "Progreso")]]
+      : [["#/homework", tr("Homework", "Deberes")], ["#/", tr("Finder", "Buscador")], ["#/practice", tr("Practice", "Práctica")], ["#/library", tr("Library", "Biblioteca")], ["#/progress", tr("Progress", "Progreso")], ...(isOwner() ? [["#/marking", tr("Marking", "Corregir")] as [string, string], ["#/people", tr("People", "Personas")] as [string, string]] : [])]
     : [];
   return h("header", { class: "top" },
     h("a", { class: "brand", href: "#/" }, "IB Paper Finder"),
@@ -103,7 +105,8 @@ async function route(): Promise<void> {
 
   try {
     const [, section, id] = path.split("/");
-    if (section === "search") await searchView(main, new URLSearchParams(query));
+    if (homeworkOnly() && !["homework", "progress", "q", "paper"].includes(section ?? "")) await homeworkListView(main);
+    else if (section === "search") await searchView(main, new URLSearchParams(query));
     else if (section === "homework" && id) await homeworkSetView(main, id);
     else if (section === "homework") await homeworkListView(main);
     else if (section === "practice") await practiceModeView(main);

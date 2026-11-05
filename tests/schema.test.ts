@@ -14,7 +14,7 @@ describe("schema.sql access rules", () => {
     for (const p of policies.filter((p) => LIBRARY.some((t) => p.includes(` on ${t} `)))) {
       expect(p).not.toMatch(/\bto (anon|public)\b/);
       expect(p).toMatch(/\bto authenticated\b/);
-      expect(p).toMatch(/is_approved\(\)|is_owner\(\)/);
+      expect(p).toMatch(/is_approved\(\)|is_owner\(\)|can_see_paper\(|can_see_question\(/);
       expect(p).not.toMatch(/using \(true\)/);
     }
   });
@@ -79,7 +79,28 @@ describe("schema.sql markscheme ranges", () => {
     expect(sql).toContain("alter table public.markscheme_ranges enable row level security");
     const ps = policies.filter((p) => p.includes(" on public.markscheme_ranges "));
     expect(ps).toHaveLength(2);
-    for (const p of ps) expect(p).toMatch(/is_approved\(\)|is_owner\(\)/);
+    for (const p of ps) expect(p).toMatch(/is_approved\(\)|is_owner\(\)|can_see_question\(/);
     expect(ps.find((p) => p.includes("for all"))).toContain("is_owner()");
+  });
+});
+
+describe("schema.sql access per person", () => {
+  const fn = sql.slice(sql.indexOf("create or replace function public.can_see_paper"), sql.indexOf("create or replace function public.can_see_question"));
+  it("owner sees all, unapproved see nothing, full access is limited to the ticked subjects", () => {
+    expect(fn).toContain("when public.is_owner() then true");
+    expect(fn).toContain("when not public.is_approved() then false");
+    expect(fn).toContain("me.subjects is null or p.subject = any (me.subjects)");
+  });
+  it("homework-only people only see papers behind homework assigned to them", () => {
+    expect(fn).toContain("ha.user_id = auth.uid()");
+    expect(fn).toContain("join public.homework_items hi on hi.set_id = ha.set_id");
+  });
+  it("new people default to homework only, and every library read rule goes through can_see_*", () => {
+    expect(sql).toContain("add column if not exists access text not null default 'homework'");
+    for (const name of ['"papers: approved read"', '"questions: approved read"', '"tags: approved read"', '"ms ranges: approved read"', '"papers bucket: approved read"']) {
+      const ps = policies.filter((p) => p.includes(`create policy ${name}`));
+      expect(ps).toHaveLength(1);
+      expect(ps[0]).toMatch(/can_see_(paper|question)\(/);
+    }
   });
 });

@@ -1,4 +1,5 @@
-import { db, fetchAll, loadGroups, state, type Profile, type StudentGroup } from "../data";
+import { db, fetchAll, loadGroups, state, subjectName, type Profile, type StudentGroup } from "../data";
+import { SUBJECTS } from "../lib/detect";
 import { tr } from "../i18n";
 import { parsePracticeSettings } from "../lib/practice";
 import { errorText, h, spinner, toast } from "../ui";
@@ -42,6 +43,7 @@ export async function peopleView(root: HTMLElement): Promise<void> {
         ? h("ul", { class: "people" }, ...list.map((p) =>
             h("li", {},
               h("div", {}, h("strong", {}, p.full_name || p.email), h("div", { class: "small muted" }, `${p.email} · ${new Date(p.created_at).toLocaleDateString()}`)),
+              status === "approved" ? accessControls(p) : "",
               h("div", { class: "row" },
                 status !== "approved" ? h("button", { class: "btn btn-small", onclick: () => setStatus(p, "approved") }, tr("Approve", "Aprobar")) : "",
                 status !== "removed" ? h("button", { class: "btn btn-small btn-danger", onclick: () => setStatus(p, "removed") }, tr("Remove", "Quitar")) : "",
@@ -125,4 +127,29 @@ function groupsSection(root: HTMLElement, groups: StudentGroup[], students: Prof
     ))) : "",
     h("button", { class: "btn btn-small", onclick: () => edit(null) }, tr("New group", "Nuevo grupo")),
   );
+}
+
+/** Homework only, or the full app in the ticked subjects. Saved straight away; enforced by the database. */
+function accessControls(p: Profile): HTMLElement {
+  const mode = h("select", { "aria-label": tr("Access", "Acceso") },
+    h("option", { value: "homework", selected: (p.access ?? "homework") === "homework" }, tr("Homework only", "Solo deberes")),
+    h("option", { value: "full", selected: p.access === "full" }, tr("Full app", "App completa")));
+  const boxes = SUBJECTS.map((s) => {
+    const box = h("input", { type: "checkbox", value: s.id, checked: !p.subjects || p.subjects.includes(s.id) });
+    return { box, label: h("label", { class: "check small" }, box, subjectName(s.id)) };
+  });
+  const subjectsRow = h("div", { class: "row", hidden: mode.value !== "full" }, ...boxes.map((b) => b.label));
+  const save = async () => {
+    subjectsRow.hidden = mode.value !== "full";
+    const ticked = boxes.filter((b) => b.box.checked).map((b) => b.box.value);
+    const subjects = ticked.length === SUBJECTS.length ? null : ticked;
+    const { error } = await db().from("profiles").update({ access: mode.value, subjects }).eq("id", p.id);
+    if (error) return toast(errorText(error), true);
+    p.access = mode.value as Profile["access"];
+    p.subjects = subjects;
+    toast(tr("Access saved", "Acceso guardado"));
+  };
+  mode.addEventListener("change", () => void save());
+  for (const b of boxes) b.box.addEventListener("change", () => void save());
+  return h("div", { class: "stack" }, mode, subjectsRow);
 }
