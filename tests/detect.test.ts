@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectPaperCode, detectPaper, pairKey } from "../src/lib/detect";
+import { detectPaperCode, detectPaper, withoutLicencePages, pairKey } from "../src/lib/detect";
 
 describe("detectPaper", () => {
   it("detects pre-release statements as Paper 1", () => {
@@ -93,5 +93,17 @@ describe("detectPaper", () => {
       subject: "math-ai", year: 2025, session: "May", timezone: "TZ2", paperNumber: 2, level: "SL",
     });
     expect(detectPaperCode("M24/3/BUSMT/HP3/ENG/TZ0/XX")).toMatchObject({ level: "HL", paperNumber: 3, year: 2024 });
+  });
+  it("reads a question paper's cover behind the licence page", () => {
+    const pages = [
+      "© International Baccalaureate Organization 2026 All rights reserved. No part of this product may be reproduced in any form or by any electronic or mechanical means, including information storage and retrieval systems, without the prior written permission from the IB. " + "x ".repeat(1200),
+      "Session number 2226 – 5218 © International Baccalaureate Organization 2026 19 pages 1 hour 30 minutes 14 May 2026 Zone A afternoon Mathematics: applications and interpretation Standard level Paper 1 Instructions to students",
+      "– 2 – 2226 – 5218 20EP02 Answers must be written within the answer boxes provided.",
+    ];
+    const text = withoutLicencePages(pages).slice(0, 3).join("\n");
+    expect(detectPaper("Math AI SL past papers/Mathematics_applications_and_interpretation_paper_1_TZ1_SL.pdf", text)).toMatchObject({
+      subject: "math-ai", level: "SL", year: 2026, session: "May", timezone: "TZ1", paperNumber: 1, kind: "paper",
+    });
+    expect(detectPaperCode("– 2 – 8825 – 7101")).toMatchObject({ session: "November", year: 2025 });
   });
 });

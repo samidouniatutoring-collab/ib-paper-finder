@@ -129,7 +129,12 @@ const CODE_SUBJECTS: Record<string, SubjectId> = {
 };
 export function detectPaperCode(text: string): PaperCode | null {
   const m = text.match(/\b([MN])(\d{2})\s*\/\s*\d\s*\/\s*([A-Z]{2,8})\s*\/\s*([SHB])?P([1-3])\s*\/\s*[A-Z]{3}(?:\s*\/\s*TZ([0-3]))?(?:\s*\/\s*XX)?(\s*\/\s*M\b)?/);
-  if (!m) return null;
+  if (!m) {
+    // Question papers print a session number instead, e.g. "2226 – 5218": 22 = May, 88 = November, 26 = 2026.
+    const n = text.match(/\b(22|88)(\d{2})\s*[–—-]\s*\d{4}\b/);
+    if (!n) return null;
+    return { session: n[1] === "22" ? "May" : "November", year: 2000 + Number(n[2]), subject: null, level: null, paperNumber: null, timezone: null, markscheme: false };
+  }
   return {
     session: m[1] === "M" ? "May" : "November",
     year: 2000 + Number(m[2]),
@@ -139,6 +144,14 @@ export function detectPaperCode(text: string): PaperCode | null {
     timezone: m[6] !== undefined ? (`TZ${m[6]}` as Timezone) : null,
     markscheme: Boolean(m[7]),
   };
+}
+
+/** Drops the IB licence/copyright page that some downloads put in front of the cover. */
+export function withoutLicencePages(pages: string[]): string[] {
+  const isLicence = (t: string) =>
+    /all rights reserved/i.test(t) && /prior written permission/i.test(t) && !/instructions to (candidates|students)/i.test(t);
+  const kept = pages.filter((t) => !isLicence(t));
+  return kept.length ? kept : pages;
 }
 
 /** Combine file name (preferred), the IB paper code and first-page text (fallbacks) into one result. */

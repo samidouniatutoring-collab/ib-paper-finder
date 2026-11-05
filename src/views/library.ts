@@ -2,7 +2,7 @@ import { withOffline } from "../offline";
 import { db, isOwner, loadPapers, paperLabel, subjectName, type Paper } from "../data";
 import { tr } from "../i18n";
 import { pairKey, SUBJECTS } from "../lib/detect";
-import { expandFiles, linkMarkscheme, processFiles, reanalyse, refreshSearchText, type FileResult } from "../processing";
+import { expandFiles, linkMarkscheme, processFiles, reanalyse, redetect, refreshSearchText, type FileResult } from "../processing";
 import { offlineFiles } from "../offline";
 import { errorText, h, spinner, toast } from "../ui";
 
@@ -106,6 +106,15 @@ function toolsPanel(papers: Paper[]): HTMLElement {
         h("button", { class: "btn btn-small btn-secondary", onclick: () => void runAll(tr("Search text", "Texto de búsqueda"), papers.filter((p) => p.kind === "paper"), refreshSearchText) },
           tr("Fill search text for all papers", "Rellenar texto de búsqueda de todos los exámenes")),
         h("span", { class: "small muted" }, tr("Needed once for papers added before search existed. Keeps tags, homework and progress.", "Hace falta una vez para exámenes subidos antes de la búsqueda. Mantiene etiquetas, deberes y progreso.")),
+      ),
+      h("div", { class: "row" },
+        h("button", { class: "btn btn-small", onclick: async () => {
+            await runAll(tr("Re-read details", "Releer datos"), papers.filter((p) => p.needs_review || !p.year), redetect);
+            const main = document.getElementById("main");
+            if (main) setTimeout(() => void libraryView(main), 800);
+          } },
+          tr("Re-read details from the PDFs", "Releer datos de los PDF")),
+        h("span", { class: "small muted" }, tr("For files marked \u201cCheck details\u201d or with no year: reads the year, session, paper and timezone from inside the PDF and pairs markschemes. Details you set by hand are kept.", "Para archivos con \u201cRevisar datos\u201d o sin año: lee año, convocatoria, prueba y zona del PDF y empareja los esquemas. Se mantienen los datos que fijaste a mano.")),
       ),
       h("div", { class: "row" },
         h("button", { class: "btn btn-small btn-secondary", onclick: () => void runAll(tr("Markscheme pages", "Páginas del esquema"), papers.filter((p) => p.kind === "paper"), (p) => linkMarkscheme(p)) },

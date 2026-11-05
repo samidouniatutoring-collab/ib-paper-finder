@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 // Runs off the main thread: file hashing and paper analysis (detection, question split, tagging).
-import { detectPaper, type Detected, type SubjectId } from "./lib/detect";
+import { detectPaper, withoutLicencePages, type Detected, type SubjectId } from "./lib/detect";
 import { splitQuestions } from "./lib/split";
 import { tagQuestion } from "./lib/tagger";
 import { TOPIC_MAPS, tagId } from "./lib/topics";
@@ -34,7 +34,7 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
       self.postMessage({ id: msg.id, result: hex });
       return;
     }
-    const detected = { ...detectPaper(msg.name, msg.pages.slice(0, 3).join("\n")), ...msg.override };
+    const detected = { ...detectPaper(msg.name, withoutLicencePages(msg.pages).slice(0, 3).join("\n")), ...msg.override };
     const topics = detected.subject ? TOPIC_MAPS[detected.subject as SubjectId] : [];
     // Pre-release statements are never split into questions (and so never tagged).
     const parts = detected.kind === "prerelease" ? [] : splitQuestions(msg.pages);

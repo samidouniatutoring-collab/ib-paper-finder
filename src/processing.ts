@@ -258,3 +258,37 @@ export async function linkMarkscheme(p: Paper, pages?: string[]): Promise<number
   }
   return rows.length;
 }
+
+/**
+ * Re-reads a paper's details (year, session, level, paper number, timezone, subject) from the PDF itself and fills in
+ * the ones that are still empty. Details you set by hand are kept. Then pairs it with its markscheme.
+ * Returns true when something was filled in.
+ */
+export async function redetect(p: Paper): Promise<boolean> {
+  const bytes = await loadPaperBytes(p.storage_path);
+  const doc = await openPdf(bytes);
+  const pages = await extractPages(doc);
+  await doc.destroy();
+  const a = await call<Analysis>({ type: "analyse", name: p.original_name, pages });
+  const d = a.detected;
+  const merged: Detected = {
+    subject: (p.subject as Detected["subject"]) ?? d.subject,
+    level: (p.level as Detected["level"]) ?? d.level,
+    year: p.year ?? d.year,
+    session: (p.session as Detected["session"]) ?? d.session,
+    timezone: (p.timezone as Detected["timezone"]) ?? d.timezone,
+    paperNumber: p.paper_number ?? d.paperNumber,
+    kind: p.kind === "paper" && d.kind !== "paper" ? d.kind : p.kind,
+  };
+  const changed =
+    merged.subject !== p.subject || merged.level !== p.level || merged.year !== p.year || merged.session !== p.session ||
+    merged.timezone !== p.timezone || merged.paperNumber !== p.paper_number || merged.kind !== p.kind;
+  const row = {
+    subject: merged.subject, level: merged.level, year: merged.year, session: merged.session, timezone: merged.timezone,
+    paper_number: merged.paperNumber, kind: merged.kind, needs_review: needsReview(merged),
+  };
+  const { data, error } = await db().from("papers").update(row).eq("id", p.id).select("*").single();
+  if (error) throw error;
+  await linkMarkscheme(data as Paper, merged.kind === "markscheme" ? pages : undefined).catch(() => 0);
+  return changed;
+}
