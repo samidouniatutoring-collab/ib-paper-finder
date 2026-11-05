@@ -262,7 +262,7 @@ function editPaper(p: Paper): void {
     field(tr("Subject", "Asignatura"), select("subject", SUBJECTS.map((s) => [s.id, subjectName(s.id)]), p.subject)),
     field(tr("Level", "Nivel"), select("level", [["HL", "HL"], ["SL", "SL"], ["HL/SL", "HL/SL"]], p.level)),
     field(tr("Year", "Año"), h("input", { name: "year", type: "number", min: 1990, max: 2100, value: p.year ?? "" })),
-    field(tr("Session", "Convocatoria"), select("session", [["May", tr("May", "Mayo")], ["November", tr("November", "Noviembre")]], p.session)),
+    field(tr("Session", "Convocatoria"), select("session", [["May", tr("May", "Mayo")], ["November", tr("November", "Noviembre")], ["Specimen", tr("Specimen", "Modelo (specimen)")]], p.session)),
     field(tr("Timezone", "Zona horaria"), select("timezone", [["TZ0", "TZ0"], ["TZ1", "TZ1"], ["TZ2", "TZ2"], ["TZ3", "TZ3"]], p.timezone)),
     field(tr("Paper number", "Número de prueba"), select("paper", [["1", "1"], ["1A", "1A"], ["1B", "1B"], ["2", "2"], ["3", "3"]], p.paper_number ? `${p.paper_number}${p.paper_part ?? ""}` : null)),
     field(tr("Type", "Tipo"), select("kind", [["paper", tr("Paper", "Examen")], ["markscheme", tr("Markscheme", "Esquema")], ["prerelease", tr("Pre-release statement", "Declaración de pre-publicación")]], p.kind)),

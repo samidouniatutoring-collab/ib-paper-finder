@@ -12,7 +12,8 @@ export const SUBJECTS: { id: SubjectId; name: string; nameEs: string }[] = [
 ];
 
 export type Level = "HL" | "SL" | "HL/SL";
-export type Session = "May" | "November";
+/** "Specimen" = the IB specimen papers of a new syllabus; their year is the first exam year. */
+export type Session = "May" | "November" | "Specimen";
 export type Timezone = "TZ0" | "TZ1" | "TZ2" | "TZ3";
 export type Kind = "paper" | "markscheme" | "prerelease";
 export type PaperPart = "A" | "B";
@@ -68,6 +69,11 @@ function detectLevel(s: string): Level | null {
 
 function detectSessionYear(s: string, strict = false): { session: Session | null; year: number | null } {
   if (strict) {
+    // Specimen papers: "Specimen paper", year from "for first examinations in 2026" when printed.
+    if (/\bspecimen (paper|papers|question paper|markscheme)\b/.test(s)) {
+      const y = s.match(/\bfirst (?:examinations|assessment) (?:in )?((?:19|20)\d{2})\b/);
+      return { session: "Specimen", year: y ? Number(y[1]) : null };
+    }
     // Page text: only trust "May 2023" / "November 2022" / "mayo de 2023" (the word "may" is common English).
     const m = s.match(/\b(may|mayo|november|noviembre)(?: de)? ((?:19|20)\d{2})\b/);
     if (!m) return { session: null, year: null };
@@ -83,7 +89,8 @@ function detectSessionYear(s: string, strict = false): { session: Session | null
   }
   const full = s.match(/\b(19|20)(\d{2})\b/);
   if (full) year = Number(full[1] + full[2]);
-  if (/\b(may|mayo)\b/.test(s)) session = "May";
+  if (/\b(specimens?|especimen)\b/.test(s)) session = "Specimen";
+  else if (/\b(may|mayo)\b/.test(s)) session = "May";
   else if (/\b(november|nov|noviembre)\b/.test(s)) session = "November";
   return { session, year };
 }

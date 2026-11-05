@@ -139,4 +139,18 @@ describe("detectPaper", () => {
     expect(pairKey({ ...base, paper_part: "A" })).not.toBe(pairKey({ ...base, paper_part: "B" }));
     expect(pairKey({ ...base, paper_part: null })).toBe(pairKey(base));
   });
+
+  it("reads specimen papers", () => {
+    expect(detectPaper("Sports_exercise_and_health_science_paper_1A_SL_specimen_2026.pdf")).toMatchObject({
+      subject: "sehs", level: "SL", year: 2026, session: "Specimen", paperNumber: 1, paperPart: "A", kind: "paper",
+    });
+    expect(detectPaper("Psychology_paper_3_HL_specimen_2027_markscheme.pdf")).toMatchObject({
+      subject: "psychology", level: "HL", year: 2027, session: "Specimen", paperNumber: 3, kind: "markscheme",
+    });
+    expect(detectPaper("scan.pdf", "Markscheme\nSpecimen paper\nPsychology\nHigher level and standard level\nPaper 2")).toMatchObject({
+      session: "Specimen", paperNumber: 2, kind: "markscheme",
+    });
+    // "May" inside a sentence is not a session; a real May paper is unchanged.
+    expect(detectPaper("Psychology_paper_1_HL_May_2027.pdf").session).toBe("May");
+  });
 });

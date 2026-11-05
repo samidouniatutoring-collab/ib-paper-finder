@@ -38,7 +38,7 @@ create table if not exists public.papers (
   subject text,
   level text check (level in ('HL', 'SL', 'HL/SL')),
   year int,
-  session text check (session in ('May', 'November')),
+  session text check (session in ('May', 'November', 'Specimen')),
   timezone text check (timezone in ('TZ0', 'TZ1', 'TZ2', 'TZ3')),
   paper_number int,
   kind text not null default 'paper' check (kind in ('paper', 'markscheme', 'prerelease')),
@@ -447,6 +447,10 @@ alter table public.profiles add column if not exists access text not null defaul
 alter table public.profiles drop constraint if exists profiles_access_check;
 alter table public.profiles add constraint profiles_access_check check (access in ('homework', 'full'));
 alter table public.profiles add column if not exists subjects text[];
+
+-- IB specimen papers of a new syllabus (year = first exam year).
+alter table public.papers drop constraint if exists papers_session_check;
+alter table public.papers add constraint papers_session_check check (session in ('May', 'November', 'Specimen'));
 
 -- Split papers such as SEHS Paper 1A / 1B (null for normal papers). Must exist before can_see_paper uses it.
 alter table public.papers add column if not exists paper_part text check (paper_part in ('A', 'B'));
