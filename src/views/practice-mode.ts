@@ -1,3 +1,4 @@
+import { COURSES, inCourse } from "../lib/courses";
 import { findPrerelease, loadMyProgress, paperLabel, saveProgress, state, subjectName, type Question } from "../data";
 import { tr } from "../i18n";
 import { SUBJECTS, type SubjectId } from "../lib/detect";
@@ -8,7 +9,7 @@ import { errorText, h, spinner, toast } from "../ui";
 import { subjectQuestions, topicName } from "./finder";
 import { markschemeFor, pageWidth, prereleaseButton, renderRange, showMarkscheme } from "./viewer";
 
-const choice = { subject: "", topics: [] as string[], paper: "", level: "", includeDone: false };
+const choice = { subject: "", topics: [] as string[], paper: "", includeDone: false };
 let timer: number | undefined;
 
 export async function practiceModeView(root: HTMLElement): Promise<void> {
@@ -16,10 +17,10 @@ export async function practiceModeView(root: HTMLElement): Promise<void> {
   const subject = h("select", { "aria-label": tr("Subject", "Asignatura") }, h("option", { value: "" }, tr("Choose a subject", "Elige una asignatura")),
     ...SUBJECTS.map((s) => h("option", { value: s.id, selected: choice.subject === s.id }, subjectName(s.id))));
   const topicsBox = h("div");
-  const paper = h("select", { "aria-label": tr("Paper", "Prueba") }, h("option", { value: "" }, tr("Any paper", "Cualquier prueba")),
-    ...["1", "2", "3"].map((n) => h("option", { value: n, selected: choice.paper === n }, `${tr("Paper", "Prueba")} ${n}`)));
-  const level = h("select", { "aria-label": tr("Level", "Nivel") }, h("option", { value: "" }, tr("Any level", "Cualquier nivel")),
-    ...["HL", "SL"].map((n) => h("option", { value: n, selected: choice.level === n }, n)));
+  const paper = h("select", { "aria-label": tr("Paper", "Prueba") });
+  const drawPapers = () => paper.replaceChildren(h("option", { value: "" }, tr("Any paper", "Cualquier prueba")),
+    ...(COURSES[subject.value as SubjectId]?.papers ?? [1, 2, 3]).map((n) => h("option", { value: String(n), selected: choice.paper === String(n) }, `${tr("Paper", "Prueba")} ${n}`)));
+  drawPapers();
   const includeDone = h("input", { type: "checkbox", checked: choice.includeDone });
   const drawTopics = () => {
     if (!subject.value) return topicsBox.replaceChildren();
@@ -33,14 +34,13 @@ export async function practiceModeView(root: HTMLElement): Promise<void> {
         return h("label", { class: "check" }, box, topicName(t));
       })))));
   };
-  subject.addEventListener("change", () => { choice.topics = []; drawTopics(); });
+  subject.addEventListener("change", () => { choice.topics = []; choice.paper = ""; drawTopics(); drawPapers(); });
   drawTopics();
   const start = () => {
     if (!subject.value) return toast(tr("Choose a subject.", "Elige una asignatura."), true);
     choice.subject = subject.value;
     choice.topics = [...topicsBox.querySelectorAll<HTMLInputElement>("input:checked")].map((b) => b.value);
     choice.paper = paper.value;
-    choice.level = level.value;
     choice.includeDone = includeDone.checked;
     void runSession(root);
   };
@@ -49,7 +49,7 @@ export async function practiceModeView(root: HTMLElement): Promise<void> {
     h("p", { class: "muted" }, tr("Random questions you haven't done yet, with a timer. Show the markscheme, score yourself, then go to the next one.",
       "Preguntas al azar que aún no has hecho, con cronómetro. Mira el esquema, ponte nota y pasa a la siguiente.")),
     h("div", { class: "card stack" },
-      h("div", { class: "row" }, subject, paper, level),
+      h("div", { class: "row" }, subject, paper),
       topicsBox,
       h("label", { class: "check" }, includeDone, tr("Include questions I've already done", "Incluir preguntas ya hechas")),
       h("div", {}, h("button", { class: "btn", onclick: start }, tr("Start", "Empezar"))),
@@ -63,11 +63,12 @@ async function runSession(root: HTMLElement): Promise<void> {
   let progress: Awaited<ReturnType<typeof loadMyProgress>>;
   try {
     [qs, progress] = await Promise.all([subjectQuestions(choice.subject), loadMyProgress()]);
+    qs = qs.filter((q) => inCourse(q.papers!));
   } catch (e) {
     root.replaceChildren(h("p", {}, errorText(e)));
     return;
   }
-  const filter: PracticeFilter = { topics: choice.topics, paper: choice.paper ? Number(choice.paper) : null, level: choice.level || null, includeDone: choice.includeDone };
+  const filter: PracticeFilter = { topics: choice.topics, paper: choice.paper ? Number(choice.paper) : null, level: null, includeDone: choice.includeDone };
   const settings = parsePracticeSettings(state.settings.practice_settings);
   const seen = new Set<string>();
   const done = () => new Set([...progress.values()].filter((p) => p.done).map((p) => p.question_id));

@@ -1,4 +1,5 @@
-import { loadMyProgress, loadPrereleases, loadSubjectQuestions, paperLabel, type Paper, subjectName, type Progress, type Question } from "../data";
+import { COURSES, inCourse } from "../lib/courses";
+import { loadMyProgress, loadPapers, loadPrereleases, loadSubjectQuestions, paperLabel, type Paper, subjectName, type Progress, type Question } from "../data";
 import { lang, tr } from "../i18n";
 import { pairKey, SUBJECTS, type SubjectId } from "../lib/detect";
 import { confidenceHint } from "../lib/tagger";
@@ -8,7 +9,7 @@ import { h, spinner } from "../ui";
 import { homeworkBanner } from "./homework";
 import { offlineFiles } from "../offline";
 
-const filters = { subject: "" as string, topic: "" as string, paper: "", level: "", from: "", to: "", hideLow: false };
+const filters = { subject: "" as string, topic: "" as string, paper: "", from: "", to: "", hideLow: false, mode: "topic" as "topic" | "papers" };
 const cache = new Map<string, Question[]>();
 const preCache = new Map<string, Map<string, Paper>>();
 
@@ -46,7 +47,15 @@ export async function finderView(root: HTMLElement): Promise<void> {
   });
   const banner = h("div");
   void homeworkBanner().then((b) => banner.replaceChildren(b));
-  root.replaceChildren(banner, h("h1", {}, tr("Find questions by topic", "Buscar preguntas por tema")), h("div", { class: "row" }, subjectSelect), body, practiceBar());
+  const modeBtn = (m: "topic" | "papers", label: string) =>
+    h("button", { class: `btn btn-small ${filters.mode === m ? "" : "btn-secondary"}`, onclick: () => { filters.mode = m; void finderView(root); } }, label);
+  root.replaceChildren(
+    banner,
+    h("h1", {}, filters.mode === "papers" ? tr("Full papers", "Exámenes completos") : tr("Find questions by topic", "Buscar preguntas por tema")),
+    h("div", { class: "row" }, subjectSelect, modeBtn("topic", tr("By topic", "Por tema")), modeBtn("papers", tr("Full papers", "Exámenes completos"))),
+    body,
+    filters.mode === "topic" ? practiceBar() : "",
+  );
   await renderSubject(body);
 }
 
@@ -55,6 +64,7 @@ async function renderSubject(body: HTMLElement): Promise<void> {
     body.replaceChildren(h("p", { class: "muted" }, tr("Pick a subject to see its syllabus topics.", "Elige una asignatura para ver los temas del programa.")));
     return;
   }
+  if (filters.mode === "papers") return renderPapers(body);
   body.replaceChildren(spinner(tr("Loading questions…", "Cargando preguntas…")));
   const [questions, progress, pre] = await Promise.all([subjectQuestions(filters.subject), loadMyProgress(), subjectPrereleases(filters.subject)]);
   const topics = TOPIC_MAPS[filters.subject as SubjectId];
@@ -78,7 +88,7 @@ function topicList(topics: Topic[], qs: Question[], progress: Map<string, Progre
   return [...groups.entries()].map(([group, ts]) =>
     h("div", { class: "topic-group" }, h("h3", {}, group),
       ...ts.map((t) => {
-        const matching = qs.filter((q) => tagsFor(q, t.code));
+        const matching = qs.filter((q) => tagsFor(q, t.code) && inCourse(q.papers!));
         const done = matching.filter((q) => progress.get(q.id)?.done).length;
         return h("button", {
           class: `topic${filters.topic === t.code ? " active" : ""}`,
@@ -97,7 +107,7 @@ function questionList(qs: Question[], progress: Map<string, Progress>, topics: T
     el.addEventListener("change", () => { filters[key] = el.value; redraw(); });
     return el;
   };
-  const sel = (key: "paper" | "level", label: string, opts: string[]) => {
+  const sel = (key: "paper", label: string, opts: string[]) => {
     const el = h("select", { "aria-label": label }, h("option", { value: "" }, label), ...opts.map((o) => h("option", { value: o, selected: filters[key] === o }, o)));
     el.addEventListener("change", () => { filters[key] = el.value; redraw(); });
     return el;
@@ -111,8 +121,8 @@ function questionList(qs: Question[], progress: Map<string, Progress>, topics: T
       const p = q.papers!;
       if (!tag) return false;
       if (filters.hideLow && tag.source === "auto" && confidenceHint(tag.confidence) === "low") return false;
+      if (!inCourse(p)) return false;
       if (filters.paper && String(p.paper_number) !== filters.paper) return false;
-      if (filters.level && !(p.level ?? "").includes(filters.level)) return false;
       if (filters.from && (p.year ?? 0) < Number(filters.from)) return false;
       if (filters.to && (p.year ?? 9999) > Number(filters.to)) return false;
       return true;
@@ -122,8 +132,7 @@ function questionList(qs: Question[], progress: Map<string, Progress>, topics: T
   return [
     h("h2", {}, topicName(topic)),
     h("div", { class: "row filters" },
-      sel("paper", tr("Any paper", "Cualquier prueba"), ["1", "2", "3"]),
-      sel("level", tr("Any level", "Cualquier nivel"), ["HL", "SL"]),
+      sel("paper", tr("Any paper", "Cualquier prueba"), (COURSES[filters.subject as SubjectId]?.papers ?? [1, 2, 3]).map(String)),
       input("from", tr("From year", "Desde")),
       input("to", tr("To year", "Hasta")),
       h("label", { class: "check" }, low, tr("Hide low-confidence", "Ocultar baja confianza")),
@@ -152,4 +161,29 @@ function questionList(qs: Question[], progress: Map<string, Progress>, topics: T
         }))
       : h("p", { class: "muted" }, tr("No questions match.", "Ninguna pregunta coincide.")),
   ];
+}
+
+/** Full papers of the chosen subject (your level and papers only), newest first, each with its markscheme status. */
+async function renderPapers(body: HTMLElement): Promise<void> {
+  body.replaceChildren(spinner(tr("Loading papers…", "Cargando exámenes…")));
+  const all = await loadPapers();
+  const papers = all.filter((p) => p.subject === filters.subject && p.kind === "paper" && inCourse(p));
+  const withMs = new Set(all.filter((p) => p.kind === "markscheme").map((p) => pairKey(p)));
+  if (!papers.length) {
+    body.replaceChildren(h("p", { class: "muted" }, tr("No papers for this subject yet.", "Aún no hay exámenes de esta asignatura.")));
+    return;
+  }
+  const byYear = new Map<string, Paper[]>();
+  for (const p of papers) byYear.set(String(p.year ?? "?"), [...(byYear.get(String(p.year ?? "?")) ?? []), p]);
+  body.replaceChildren(...[...byYear.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([year, ps]) =>
+    h("div", { class: "card" }, h("h2", {}, year),
+      h("ul", { class: "qlist" }, ...ps
+        .sort((a, b) => (a.session ?? "").localeCompare(b.session ?? "") || (a.timezone ?? "").localeCompare(b.timezone ?? "") || (a.paper_number ?? 0) - (b.paper_number ?? 0))
+        .map((p) => h("li", { class: "row" },
+          h("strong", {}, paperLabel(p)),
+          withMs.has(pairKey(p)) ? "" : h("span", { class: "badge" }, tr("No markscheme", "Sin esquema")),
+          h("a", { class: "btn btn-small", href: `#/full/${p.id}` }, tr("Practise full paper", "Practicar examen completo")),
+          h("a", { class: "btn btn-small btn-secondary", href: `#/paper/${p.id}` }, tr("Just view", "Solo ver")),
+        ))),
+    )));
 }

@@ -5,6 +5,7 @@ import { db, isOwner, state, type Profile, type Settings } from "./data";
 import { lang, setLang, tr } from "./i18n";
 import { clearOffline, getJson, initOffline, isNetworkError, offlineUser, setOfflineUser, withOffline } from "./offline";
 import { errorText, h } from "./ui";
+import { fullPaperView } from "./views/full-paper";
 import { forgotView, loginView, newPasswordView, signupView, waitingView } from "./views/auth";
 import { finderView } from "./views/finder";
 import { homeworkListView, homeworkSetView } from "./views/homework";
@@ -110,6 +111,7 @@ async function route(): Promise<void> {
     else if (section === "people" && isOwner()) await peopleView(main);
     else if (section === "q" && id) await questionView(main, id);
     else if (section === "paper" && id) await paperView(main, id);
+    else if (section === "full" && id) await fullPaperView(main, id);
     else await finderView(main);
   } catch (e) {
     main.replaceChildren(h("div", { class: "card" }, h("h1", {}, tr("Something went wrong", "Algo ha fallado")), h("p", {}, errorText(e))));
