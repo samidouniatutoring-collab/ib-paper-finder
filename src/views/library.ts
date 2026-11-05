@@ -112,12 +112,19 @@ function toolsPanel(papers: Paper[]): HTMLElement {
       ),
       h("div", { class: "row" },
         h("button", { class: "btn btn-small", onclick: async () => {
-            await runAll(tr("Re-read details", "Releer datos"), papers.filter((p) => p.needs_review || !p.year), redetect);
+            // Also every paper with no markscheme and every markscheme with no paper: one of them may be filed as the
+            // wrong kind because of its file name.
+            const keysOf = (kind: string) => new Set(papers.filter((p) => p.kind === kind).map((p) => pairKey(p)));
+            const paperKeys = keysOf("paper");
+            const msKeys = keysOf("markscheme");
+            const unpaired = (p: Paper) =>
+              (p.kind === "paper" && !msKeys.has(pairKey(p))) || (p.kind === "markscheme" && !paperKeys.has(pairKey(p)));
+            await runAll(tr("Re-read details", "Releer datos"), papers.filter((p) => p.needs_review || !p.year || unpaired(p)), redetect);
             const main = document.getElementById("main");
             if (main) setTimeout(() => void libraryView(main), 800);
           } },
           tr("Re-read details from the PDFs", "Releer datos de los PDF")),
-        h("span", { class: "small muted" }, tr("For files marked \u201cCheck details\u201d or with no year: reads the year, session, paper and timezone from inside the PDF and pairs markschemes. Details you set by hand are kept.", "Para archivos con \u201cRevisar datos\u201d o sin año: lee año, convocatoria, prueba y zona del PDF y empareja los esquemas. Se mantienen los datos que fijaste a mano.")),
+        h("span", { class: "small muted" }, tr("For files marked \u201cCheck details\u201d, with no year, or without their paper/markscheme: checks inside the PDF whether it is a paper or a markscheme (file names can be wrong), reads the year, session, paper and timezone from inside the PDF and pairs markschemes. Details you set by hand are kept.", "Para archivos con \u201cRevisar datos\u201d, sin año o sin su examen/esquema: comprueba en el PDF si es examen o esquema (el nombre puede estar mal), lee año, convocatoria, prueba y zona del PDF y empareja los esquemas. Se mantienen los datos que fijaste a mano.")),
       ),
       h("div", { class: "row" },
         h("button", { class: "btn btn-small btn-secondary", onclick: () => void runAll(tr("Re-split questions", "Volver a dividir"), papers.filter((p) => p.kind === "paper"), async (p) => { await reanalyse(p); await linkMarkscheme(p); }) },

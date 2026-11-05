@@ -24,6 +24,8 @@ export interface Detected {
   timezone: Timezone | null;
   paperNumber: number | null;
   kind: Kind;
+  /** True when the kind came from the PDF's own pages (not just the file name). */
+  kindFromPdf?: boolean;
 }
 
 /** Lowercase, strip accents, turn separators into single spaces. */
@@ -162,13 +164,21 @@ export function detectPaper(fileName: string, firstPageText = ""): Detected {
   const code = detectPaperCode(firstPageText);
   const fy = detectSessionYear(f);
   const ty = detectSessionYear(t, true);
-  // Markscheme wins over pre-release, which wins over paper. A pre-release statement is always Paper 1.
+  // What the PDF itself says beats the file name: downloads are often misnamed (a question paper saved as
+  // "..._markscheme.pdf"). Markscheme wins over pre-release, which wins over paper. A pre-release is always Paper 1.
+  const fromText = kindFromContent(t, code);
   const kind: Kind =
-    detectKind(f) === "markscheme" || detectKind(t, true) === "markscheme" || code?.markscheme
+    fromText === "markscheme"
       ? "markscheme"
-      : isPrerelease(f) || isPrerelease(t, true)
+      : isPrerelease(t, true)
         ? "prerelease"
-        : "paper";
+        : fromText === "paper"
+          ? isPrerelease(f) ? "prerelease" : "paper"
+          : detectKind(f) === "markscheme"
+            ? "markscheme"
+            : isPrerelease(f)
+              ? "prerelease"
+              : "paper";
   return {
     subject: detectSubject(f) ?? code?.subject ?? detectSubject(t),
     level: detectLevel(f) ?? code?.level ?? detectLevel(t),
@@ -177,7 +187,23 @@ export function detectPaper(fileName: string, firstPageText = ""): Detected {
     timezone: detectTimezone(f) ?? code?.timezone ?? detectTimezone(t),
     paperNumber: kind === "prerelease" ? 1 : detectPaperNumber(f) ?? code?.paperNumber ?? detectPaperNumber(t, true),
     kind,
+    kindFromPdf: fromText !== null || isPrerelease(t, true),
   };
+}
+
+// Only a question paper's cover has these (markschemes have "instructions to examiners").
+const PAPER_COVER =
+  /\b(instructions to candidates|candidate session number|instrucciones para los alumnos|numero de convocatoria del alumno)\b/;
+
+/**
+ * Paper or markscheme, judged only from the PDF's first pages; null when they don't say.
+ * The word "markscheme" or the "/M" page code means markscheme; the candidate cover box, the instructions to
+ * candidates, the session number ("2226 – 5218") or a page code without "/M" means question paper.
+ */
+export function kindFromContent(t: string, code: PaperCode | null): "paper" | "markscheme" | null {
+  if (detectKind(t, true) === "markscheme" || code?.markscheme) return "markscheme";
+  if (code || PAPER_COVER.test(t)) return "paper";
+  return null;
 }
 
 /** Key used to pair a paper with its markscheme. Pre-release statements must not be matched with it. */

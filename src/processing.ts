@@ -287,8 +287,18 @@ export async function redetect(p: Paper): Promise<boolean> {
     session: (p.session as Detected["session"]) ?? d.session,
     timezone: (p.timezone as Detected["timezone"]) ?? d.timezone,
     paperNumber: p.paper_number ?? d.paperNumber,
-    kind: p.kind === "paper" && d.kind !== "paper" ? d.kind : p.kind,
+    // The PDF's own pages beat a misleading file name (e.g. a question paper saved as "..._markscheme.pdf").
+    kind: d.kindFromPdf && d.kind !== p.kind ? d.kind : p.kind === "paper" && d.kind !== "paper" ? d.kind : p.kind,
   };
+  if (merged.kind !== p.kind) {
+    // It was filed as the wrong kind: its questions were saved for that kind (markschemes are not tagged), and any
+    // question pages it gave out as "markscheme" are wrong. Re-save the questions and drop those links.
+    if (p.kind === "markscheme") {
+      const { error: rErr } = await db().from("markscheme_ranges").delete().eq("markscheme_id", p.id);
+      if (rErr) throw rErr;
+    }
+    await saveQuestions(p.id, a);
+  }
   const changed =
     merged.subject !== p.subject || merged.level !== p.level || merged.year !== p.year || merged.session !== p.session ||
     merged.timezone !== p.timezone || merged.paperNumber !== p.paper_number || merged.kind !== p.kind;

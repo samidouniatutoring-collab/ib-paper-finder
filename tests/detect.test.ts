@@ -106,4 +106,19 @@ describe("detectPaper", () => {
     });
     expect(detectPaperCode("– 2 – 8825 – 7101")).toMatchObject({ session: "November", year: 2025 });
   });
+
+  it("the PDF's own pages beat a misnamed file", () => {
+    const name = "Math AI SL past papers/Mathematics_applications_and_interpretation_paper_1__TZ1_SL_markscheme.pdf";
+    // A question paper saved under a markscheme name: cover box + session number.
+    const paperCover = "Mathematics: applications and interpretation\nStandard level\nPaper 1\nCandidate session number\nInstructions to candidates\n8824 – 7201";
+    expect(detectPaper(name, paperCover)).toMatchObject({ kind: "paper", kindFromPdf: true, paperNumber: 1, timezone: "TZ1" });
+    // Page code without /M also means question paper.
+    expect(detectPaper(name, "N24/5/MATAI/SP1/ENG/TZ1/XX").kind).toBe("paper");
+    // The real markscheme keeps its kind.
+    expect(detectPaper(name, "Markscheme\nN24/5/MATAI/SP1/ENG/TZ1/XX/M")).toMatchObject({ kind: "markscheme", kindFromPdf: true });
+    // A paper named as a paper but whose pages are the markscheme.
+    expect(detectPaper("Mathematics_applications_and_interpretation_paper_1_TZ1_SL.pdf", "Markscheme\nN24/5/MATAI/SP1/ENG/TZ1/XX/M").kind).toBe("markscheme");
+    // No text (e.g. unreadable scan): falls back to the file name.
+    expect(detectPaper(name, "")).toMatchObject({ kind: "markscheme", kindFromPdf: false });
+  });
 });
