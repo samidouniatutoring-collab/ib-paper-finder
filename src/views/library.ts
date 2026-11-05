@@ -20,6 +20,7 @@ function uploadPanel(papers: Paper[]): HTMLElement {
   const bar = h("progress", { max: 1, value: 0, hidden: true });
   const status = h("p", { class: "muted" });
   const report = h("div");
+  if (lastResults) showReport(report, lastResults);
   let busy = false;
 
   async function run(list: File[]) {
@@ -39,6 +40,7 @@ function uploadPanel(papers: Paper[]): HTMLElement {
         bar.value = done;
         status.textContent = `${done} / ${total} · ${last.name}`;
       });
+      lastResults = results;
       showReport(report, results);
       toast(tr("Upload finished", "Subida terminada"));
       const main = document.getElementById("main");
@@ -114,6 +116,9 @@ function toolsPanel(papers: Paper[]): HTMLElement {
     ),
   );
 }
+
+/** Last upload report, kept so it stays visible after the library reloads. */
+let lastResults: FileResult[] | null = null;
 
 function showReport(el: HTMLElement, results: FileResult[]): void {
   const count = (s: FileResult["status"]) => results.filter((r) => r.status === s).length;
@@ -209,7 +214,7 @@ function editPaper(p: Paper): void {
     field(tr("Level", "Nivel"), select("level", [["HL", "HL"], ["SL", "SL"], ["HL/SL", "HL/SL"]], p.level)),
     field(tr("Year", "Año"), h("input", { name: "year", type: "number", min: 1990, max: 2100, value: p.year ?? "" })),
     field(tr("Session", "Convocatoria"), select("session", [["May", tr("May", "Mayo")], ["November", tr("November", "Noviembre")]], p.session)),
-    field(tr("Timezone", "Zona horaria"), select("timezone", [["TZ0", "TZ0"], ["TZ1", "TZ1"], ["TZ2", "TZ2"]], p.timezone)),
+    field(tr("Timezone", "Zona horaria"), select("timezone", [["TZ0", "TZ0"], ["TZ1", "TZ1"], ["TZ2", "TZ2"], ["TZ3", "TZ3"]], p.timezone)),
     field(tr("Paper number", "Número de prueba"), select("paper_number", [["1", "1"], ["2", "2"], ["3", "3"]], p.paper_number)),
     field(tr("Type", "Tipo"), select("kind", [["paper", tr("Paper", "Examen")], ["markscheme", tr("Markscheme", "Esquema")], ["prerelease", tr("Pre-release statement", "Declaración de pre-publicación")]], p.kind)),
     h("label", { class: "check" }, h("input", { type: "checkbox", name: "reanalyse" }), tr("Re-split and re-tag questions now (replaces manual tags)", "Volver a dividir y etiquetar ahora (sustituye las etiquetas manuales)")),

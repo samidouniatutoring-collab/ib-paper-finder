@@ -73,4 +73,12 @@ describe("detectPaper", () => {
     const key = (d: typeof a) => pairKey({ subject: d.subject, level: d.level, year: d.year, session: d.session, timezone: d.timezone, paper_number: d.paperNumber });
     expect(key(a)).toBe(key(b));
   });
+  it("detects timezone 3", () => {
+    expect(detectPaper("Mathematics_applications_and_interpretation_paper_1_TZ3_SL.pdf")).toMatchObject({
+      subject: "math-ai", level: "SL", timezone: "TZ3", paperNumber: 1, kind: "paper",
+    });
+    expect(detectPaper("Mathematics_applications_and_interpretation_paper_2_TZ3_SL_markscheme.pdf")).toMatchObject({
+      timezone: "TZ3", paperNumber: 2, kind: "markscheme",
+    });
+  });
 });

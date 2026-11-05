@@ -13,7 +13,7 @@ export const SUBJECTS: { id: SubjectId; name: string; nameEs: string }[] = [
 
 export type Level = "HL" | "SL" | "HL/SL";
 export type Session = "May" | "November";
-export type Timezone = "TZ0" | "TZ1" | "TZ2";
+export type Timezone = "TZ0" | "TZ1" | "TZ2" | "TZ3";
 export type Kind = "paper" | "markscheme" | "prerelease";
 
 export interface Detected {
@@ -84,7 +84,7 @@ function detectSessionYear(s: string, strict = false): { session: Session | null
 }
 
 function detectTimezone(s: string): Timezone | null {
-  const m = s.match(/\btz ?([012])\b|\btime ?zone ([012])\b|\bzona horaria ([012])\b/);
+  const m = s.match(/\btz ?([0-3])\b|\btime ?zone ([0-3])\b|\bzona horaria ([0-3])\b/);
   if (!m) return null;
   return `TZ${m[1] ?? m[2] ?? m[3]}` as Timezone;
 }

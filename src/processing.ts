@@ -167,7 +167,14 @@ export async function processFiles(
       try {
         r = await processOne(f, known);
       } catch (e) {
-        r = { name: f.name, status: "error", message: e instanceof Error ? e.message : String(e) };
+        console.error("Upload failed:", f.name, e);
+        const msg =
+          e instanceof Error
+            ? e.message
+            : e && typeof e === "object" && "message" in e
+              ? String((e as { message: unknown }).message)
+              : (() => { try { return JSON.stringify(e); } catch { return String(e); } })();
+        r = { name: f.name, status: "error", message: msg || "unknown error" };
       }
       results.push(r);
       onProgress(results.length, files.length, r);

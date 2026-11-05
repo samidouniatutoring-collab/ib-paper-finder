@@ -39,7 +39,7 @@ create table if not exists public.papers (
   level text check (level in ('HL', 'SL', 'HL/SL')),
   year int,
   session text check (session in ('May', 'November')),
-  timezone text check (timezone in ('TZ0', 'TZ1', 'TZ2')),
+  timezone text check (timezone in ('TZ0', 'TZ1', 'TZ2', 'TZ3')),
   paper_number int,
   kind text not null default 'paper' check (kind in ('paper', 'markscheme', 'prerelease')),
   page_count int not null default 0,
@@ -401,3 +401,7 @@ create policy "ms ranges: owner write" on public.markscheme_ranges for all to au
 -- ---------------------------------------------------------------------------
 alter table public.papers drop constraint if exists papers_kind_check;
 alter table public.papers add constraint papers_kind_check check (kind in ('paper', 'markscheme', 'prerelease'));
+
+-- Timezone 3 (e.g. Math AI papers)
+alter table public.papers drop constraint if exists papers_timezone_check;
+alter table public.papers add constraint papers_timezone_check check (timezone in ('TZ0', 'TZ1', 'TZ2', 'TZ3'));
