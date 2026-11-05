@@ -201,6 +201,16 @@ export interface HomeworkAssignment {
   assigned_at: string;
   owner_comment: string;
   owner_comment_at: string | null;
+  owner_score?: number | null;
+}
+
+export interface Submission {
+  id: string;
+  set_id: string;
+  user_id: string;
+  files: string[];
+  note: string;
+  created_at: string;
 }
 
 export interface HomeworkAnswer {

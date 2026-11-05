@@ -5,6 +5,8 @@ import {
 import { lang, tr } from "../i18n";
 import { expandAssignees, homeworkSummary, type HomeworkSummary } from "../lib/homework";
 import { errorText, h, spinner, toast } from "../ui";
+import { submit } from "../submissions";
+import type { Submission } from "../data";
 
 export function dueText(d: string | null): string {
   if (!d) return tr("No due date", "Sin fecha de entrega");
@@ -25,7 +27,7 @@ function scoreText(s: HomeworkSummary): string {
   return s.scoredMarks != null ? `${s.score}/${s.scoredMarks}` : String(s.score);
 }
 
-function questionTitle(q: Question): string {
+export function questionTitle(q: Question): string {
   const p = q.papers!;
   return `${subjectName(p.subject)} · ${paperLabel(p)} · ${q.page_level ? tr("page", "pág.") + " " + q.start_page : "Q" + q.label}`;
 }
@@ -154,7 +156,12 @@ export async function homeworkSetView(root: HTMLElement, id: string): Promise<vo
   }));
 
   root.replaceChildren(...header, summaryEl,
-    asg?.owner_comment ? h("div", { class: "card notice" }, h("strong", {}, tr("Tutor's comment", "Comentario del profesor")), h("p", {}, asg.owner_comment)) : "",
+    asg?.owner_comment || asg?.owner_score != null
+      ? h("div", { class: "card notice" }, h("strong", {}, tr("Tutor's feedback", "Comentario del profesor")),
+          asg?.owner_score != null ? h("p", {}, h("strong", {}, `${tr("Score", "Nota")}: ${asg.owner_score}${marksOf(its) ? " / " + marksOf(its) : ""}`)) : "",
+          asg?.owner_comment ? h("p", { style: "white-space: pre-wrap" }, asg.owner_comment) : "")
+      : "",
+    await submitPanel(id),
     list);
 }
 
@@ -307,4 +314,39 @@ export async function createHomeworkFrom(questions: Question[]): Promise<boolean
     toast(errorText(e), true);
     return false;
   }
+}
+
+/** Student: upload photos of the written answers for the tutor to mark. */
+async function submitPanel(setId: string): Promise<HTMLElement> {
+  const { data, error } = await db().from("homework_submissions").select("*").eq("set_id", setId).eq("user_id", state.profile!.id).order("created_at");
+  if (error) return h("div");
+  const subs = (data ?? []) as Submission[];
+  const files = h("input", { type: "file", multiple: true, accept: "image/*,application/pdf", "aria-label": tr("Photos of your answers", "Fotos de tus respuestas") });
+  const note = h("textarea", { rows: 2, placeholder: tr("Note for your tutor (optional)", "Nota para tu profesor (opcional)") });
+  const status = h("p", { class: "muted small" });
+  const send = h("button", { class: "btn" }, tr("Send to my tutor", "Enviar a mi profesor"));
+  send.addEventListener("click", async () => {
+    const list = [...(files.files ?? [])];
+    if (!list.length) return toast(tr("Add photos of your answers first.", "Añade primero fotos de tus respuestas."), true);
+    if (list.length > 40) return toast(tr("40 photos at most.", "Como máximo 40 fotos."), true);
+    send.disabled = true;
+    try {
+      await submit(setId, list, note.value.trim(), (i, n) => { status.textContent = `${tr("Uploading", "Subiendo")} ${i} / ${n}…`; });
+      toast(tr("Sent to your tutor", "Enviado a tu profesor"));
+      const main = document.getElementById("main");
+      if (main) void homeworkSetView(main, setId);
+    } catch (e) {
+      status.textContent = errorText(e);
+      send.disabled = false;
+    }
+  });
+  const fmt = (d: string) => new Date(d).toLocaleString(lang === "es" ? "es-ES" : "en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  return h("div", { class: "card stack" },
+    h("h2", {}, tr("Hand in your answers", "Entrega tus respuestas")),
+    subs.length
+      ? h("ul", {}, ...subs.map((s) => h("li", {}, `${tr("Sent", "Enviado")} ${fmt(s.created_at)} · ${s.files.length} ${tr("files", "archivos")} · ${tr("waiting for marking", "pendiente de corregir")}`)))
+      : h("p", { class: "muted small" }, tr("Take a clear photo of each page of your working (or a PDF) and send it. Your tutor marks it and sends you feedback here. Keep your own copy: photos are deleted from the app once they're marked.",
+          "Haz una foto clara de cada página (o un PDF) y envíala. Tu profesor la corrige y te deja el comentario aquí. Guarda tu propia copia: las fotos se borran de la app cuando se corrigen.")),
+    files, note, h("div", { class: "row" }, send), status,
+  );
 }

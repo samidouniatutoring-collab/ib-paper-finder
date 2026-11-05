@@ -405,3 +405,39 @@ alter table public.papers add constraint papers_kind_check check (kind in ('pape
 -- Timezone 3 (e.g. Math AI papers)
 alter table public.papers drop constraint if exists papers_timezone_check;
 alter table public.papers add constraint papers_timezone_check check (timezone in ('TZ0', 'TZ1', 'TZ2', 'TZ3'));
+
+-- ---------------------------------------------------------------------------
+-- Homework submissions: students upload photos of their answers, the owner marks them and then deletes them.
+-- Files live in the private "submissions" bucket under <student id>/<set id>/...
+-- ---------------------------------------------------------------------------
+create table if not exists public.homework_submissions (
+  id uuid primary key default gen_random_uuid(),
+  set_id uuid not null references public.homework_sets (id) on delete cascade,
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  files text[] not null default '{}',
+  note text not null default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists homework_submissions_set_idx on public.homework_submissions (set_id);
+alter table public.homework_submissions enable row level security;
+revoke all on public.homework_submissions from anon;
+drop policy if exists "submissions: owner" on public.homework_submissions;
+create policy "submissions: owner" on public.homework_submissions for all to authenticated
+  using (public.is_owner()) with check (public.is_owner());
+drop policy if exists "submissions: own" on public.homework_submissions;
+create policy "submissions: own" on public.homework_submissions for all to authenticated
+  using (user_id = auth.uid() and public.is_assigned(set_id))
+  with check (user_id = auth.uid() and public.is_assigned(set_id));
+
+alter table public.homework_assignments add column if not exists owner_score numeric;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('submissions', 'submissions', false, 10485760, array['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+on conflict (id) do nothing;
+drop policy if exists "submissions bucket: owner" on storage.objects;
+create policy "submissions bucket: owner" on storage.objects for all to authenticated
+  using (bucket_id = 'submissions' and public.is_owner()) with check (bucket_id = 'submissions' and public.is_owner());
+drop policy if exists "submissions bucket: own" on storage.objects;
+create policy "submissions bucket: own" on storage.objects for all to authenticated
+  using (bucket_id = 'submissions' and (storage.foldername(name))[1] = auth.uid()::text and public.is_approved())
+  with check (bucket_id = 'submissions' and (storage.foldername(name))[1] = auth.uid()::text and public.is_approved());

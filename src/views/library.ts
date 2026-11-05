@@ -1,7 +1,8 @@
 import { withOffline } from "../offline";
-import { db, isOwner, loadPapers, paperLabel, subjectName, type Paper } from "../data";
+import { db, fetchAll, isOwner, loadPapers, paperLabel, subjectName, type Paper } from "../data";
 import { tr } from "../i18n";
 import { pairKey, SUBJECTS } from "../lib/detect";
+import { couldMatch, findDuplicates } from "../lib/duplicates";
 import { expandFiles, linkMarkscheme, processFiles, reanalyse, redetect, refreshSearchText, type FileResult } from "../processing";
 import { offlineFiles } from "../offline";
 import { errorText, h, spinner, toast } from "../ui";
@@ -11,7 +12,9 @@ export async function libraryView(root: HTMLElement): Promise<void> {
   const papers = await withOffline("library", loadPapers);
   const content = h("div");
   root.replaceChildren(h("h1", {}, tr("Library", "Biblioteca")), isOwner() ? uploadPanel(papers) : "", isOwner() ? toolsPanel(papers) : "", content);
-  renderTree(content, papers);
+  renderTree(content, papers, new Map());
+  // Then check same-details papers by their actual text, and mark the real duplicates.
+  if (isOwner()) void checkDuplicates(papers).then((d) => { if (d.size) renderTree(content, papers, d); }).catch(() => 0);
 }
 
 function uploadPanel(papers: Paper[]): HTMLElement {
@@ -146,7 +149,24 @@ function showReport(el: HTMLElement, results: FileResult[]): void {
   );
 }
 
-function renderTree(el: HTMLElement, papers: Paper[]): void {
+/** Compares the question text of papers that share their details; returns duplicate id → copy to keep. */
+async function checkDuplicates(papers: Paper[]): Promise<Map<string, Paper>> {
+  const cands = papers.filter((p) => p.kind === "paper" && papers.some((o) => o.id !== p.id && couldMatch(p, o)));
+  if (cands.length < 2) return new Map();
+  const ids = cands.map((p) => p.id);
+  const rows = await fetchAll<{ paper_id: string; body: string | null }>((a, b) => db().from("questions").select("paper_id, body").in("paper_id", ids).range(a, b));
+  const text = new Map<string, string>();
+  for (const r of rows) text.set(r.paper_id, `${text.get(r.paper_id) ?? ""} ${r.body ?? ""}`);
+  return findDuplicates(cands, text);
+}
+
+async function deletePaper(p: Paper): Promise<void> {
+  await db().storage.from("papers").remove([p.storage_path]);
+  const { error } = await db().from("papers").delete().eq("id", p.id);
+  if (error) throw error;
+}
+
+function renderTree(el: HTMLElement, papers: Paper[], dupes: Map<string, Paper>): void {
   if (!papers.length) {
     el.replaceChildren(h("p", { class: "muted" }, tr("No papers yet.", "Aún no hay exámenes.")));
     return;
@@ -182,10 +202,18 @@ function renderTree(el: HTMLElement, papers: Paper[]): void {
               const flags = [
                 p.kind === "markscheme" ? tr("Markscheme without paper", "Esquema sin examen") : "",
                 p.kind === "paper" && !pairs.length ? tr("No markscheme", "Sin esquema") : "",
-                (counts.get(k) ?? 0) > 1 && p.kind === "paper" ? tr("Possible duplicate", "Posible duplicado") : "",
+                dupes.has(p.id) ? `${tr("Duplicate of", "Duplicado de")} ${dupes.get(p.id)!.original_name.split("/").pop()}` : "",
                 p.needs_review ? tr("Check details", "Revisar datos") : "",
               ].filter(Boolean);
-              return paperRow(p, pairs[0], flags, p.kind === "prerelease");
+              const row = paperRow(p, pairs[0], flags, p.kind === "prerelease");
+              if (dupes.has(p.id)) {
+                row.append(h("button", { class: "btn btn-small btn-danger", onclick: async () => {
+                  if (!confirm(tr("Delete this copy? The other copy stays.", "¿Eliminar esta copia? La otra se queda."))) return;
+                  try { await deletePaper(p); toast(tr("Copy deleted", "Copia eliminada")); const main = document.getElementById("main"); if (main) void libraryView(main); }
+                  catch (e) { toast(errorText(e), true); }
+                } }, tr("Delete this copy", "Eliminar esta copia")));
+              }
+              return row;
             }),
         ),
       ),

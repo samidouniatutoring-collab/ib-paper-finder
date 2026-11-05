@@ -6,6 +6,7 @@ import { lang, setLang, tr } from "./i18n";
 import { clearOffline, getJson, initOffline, isNetworkError, offlineUser, setOfflineUser, withOffline } from "./offline";
 import { errorText, h } from "./ui";
 import { fullPaperView } from "./views/full-paper";
+import { markingView } from "./views/marking";
 import { forgotView, loginView, newPasswordView, signupView, waitingView } from "./views/auth";
 import { finderView } from "./views/finder";
 import { homeworkListView, homeworkSetView } from "./views/homework";
@@ -21,7 +22,7 @@ let recovering = false;
 
 function header(signedIn: boolean): HTMLElement {
   const links: [string, string][] = signedIn && state.profile?.status === "approved"
-    ? [["#/homework", tr("Homework", "Deberes")], ["#/", tr("Finder", "Buscador")], ["#/practice", tr("Practice", "Práctica")], ["#/library", tr("Library", "Biblioteca")], ["#/progress", tr("Progress", "Progreso")], ...(isOwner() ? [["#/people", tr("People", "Personas")] as [string, string]] : [])]
+    ? [["#/homework", tr("Homework", "Deberes")], ["#/", tr("Finder", "Buscador")], ["#/practice", tr("Practice", "Práctica")], ["#/library", tr("Library", "Biblioteca")], ["#/progress", tr("Progress", "Progreso")], ...(isOwner() ? [["#/marking", tr("Marking", "Corregir")] as [string, string], ["#/people", tr("People", "Personas")] as [string, string]] : [])]
     : [];
   return h("header", { class: "top" },
     h("a", { class: "brand", href: "#/" }, "IB Paper Finder"),
@@ -109,6 +110,7 @@ async function route(): Promise<void> {
     else if (section === "library") await libraryView(main);
     else if (section === "progress") await progressView(main);
     else if (section === "people" && isOwner()) await peopleView(main);
+    else if (section === "marking" && isOwner()) await markingView(main, id);
     else if (section === "q" && id) await questionView(main, id);
     else if (section === "paper" && id) await paperView(main, id);
     else if (section === "full" && id) await fullPaperView(main, id);
