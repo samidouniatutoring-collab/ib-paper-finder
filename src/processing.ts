@@ -141,6 +141,7 @@ async function processOne(file: InputFile, knownHashes: Set<string>, onStatus?: 
       session: d.session,
       timezone: d.timezone,
       paper_number: d.paperNumber,
+      paper_part: d.paperPart,
       kind: d.kind,
       page_count: pageCount,
       needs_review: needsReview(d),
@@ -287,6 +288,7 @@ export async function redetect(p: Paper): Promise<boolean> {
     session: (p.session as Detected["session"]) ?? d.session,
     timezone: (p.timezone as Detected["timezone"]) ?? d.timezone,
     paperNumber: p.paper_number ?? d.paperNumber,
+    paperPart: p.paper_part ?? d.paperPart,
     // The PDF's own pages beat a misleading file name (e.g. a question paper saved as "..._markscheme.pdf").
     kind: d.kindFromPdf && d.kind !== p.kind ? d.kind : p.kind === "paper" && d.kind !== "paper" ? d.kind : p.kind,
   };
@@ -301,10 +303,10 @@ export async function redetect(p: Paper): Promise<boolean> {
   }
   const changed =
     merged.subject !== p.subject || merged.level !== p.level || merged.year !== p.year || merged.session !== p.session ||
-    merged.timezone !== p.timezone || merged.paperNumber !== p.paper_number || merged.kind !== p.kind;
+    merged.timezone !== p.timezone || merged.paperNumber !== p.paper_number || merged.paperPart !== p.paper_part || merged.kind !== p.kind;
   const row = {
     subject: merged.subject, level: merged.level, year: merged.year, session: merged.session, timezone: merged.timezone,
-    paper_number: merged.paperNumber, kind: merged.kind, needs_review: needsReview(merged),
+    paper_number: merged.paperNumber, paper_part: merged.paperPart, kind: merged.kind, needs_review: needsReview(merged),
   };
   const { data, error } = await db().from("papers").update(row).eq("id", p.id).select("*").single();
   if (error) throw error;

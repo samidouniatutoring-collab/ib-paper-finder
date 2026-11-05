@@ -448,6 +448,9 @@ alter table public.profiles drop constraint if exists profiles_access_check;
 alter table public.profiles add constraint profiles_access_check check (access in ('homework', 'full'));
 alter table public.profiles add column if not exists subjects text[];
 
+-- Split papers such as SEHS Paper 1A / 1B (null for normal papers). Must exist before can_see_paper uses it.
+alter table public.papers add column if not exists paper_part text check (paper_part in ('A', 'B'));
+
 create or replace function public.can_see_paper(p_id uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select case
@@ -464,6 +467,7 @@ language sql stable security definer set search_path = public as $$
         and hp.subject is not distinct from p.subject and hp.level is not distinct from p.level
         and hp.year is not distinct from p.year and hp.session is not distinct from p.session
         and hp.timezone is not distinct from p.timezone and hp.paper_number is not distinct from p.paper_number
+        and hp.paper_part is not distinct from p.paper_part
     )
   end
   from public.papers p, public.profiles me

@@ -202,7 +202,7 @@ function renderTree(el: HTMLElement, papers: Paper[], dupes: Map<string, Paper>)
       ...[...byYear.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([year, ps]) =>
         h("div", { class: "year" }, h("h3", {}, year),
           ...ps
-            .sort((a, b) => (a.session ?? "").localeCompare(b.session ?? "") || (a.timezone ?? "").localeCompare(b.timezone ?? "") || (a.paper_number ?? 0) - (b.paper_number ?? 0))
+            .sort((a, b) => (a.session ?? "").localeCompare(b.session ?? "") || (a.timezone ?? "").localeCompare(b.timezone ?? "") || (a.paper_number ?? 0) - (b.paper_number ?? 0) || (a.paper_part ?? "").localeCompare(b.paper_part ?? ""))
             .map((p) => {
               const k = pairKey(p);
               const pairs = p.kind === "paper" ? ms.get(k) ?? [] : [];
@@ -264,7 +264,7 @@ function editPaper(p: Paper): void {
     field(tr("Year", "Año"), h("input", { name: "year", type: "number", min: 1990, max: 2100, value: p.year ?? "" })),
     field(tr("Session", "Convocatoria"), select("session", [["May", tr("May", "Mayo")], ["November", tr("November", "Noviembre")]], p.session)),
     field(tr("Timezone", "Zona horaria"), select("timezone", [["TZ0", "TZ0"], ["TZ1", "TZ1"], ["TZ2", "TZ2"], ["TZ3", "TZ3"]], p.timezone)),
-    field(tr("Paper number", "Número de prueba"), select("paper_number", [["1", "1"], ["2", "2"], ["3", "3"]], p.paper_number)),
+    field(tr("Paper number", "Número de prueba"), select("paper", [["1", "1"], ["1A", "1A"], ["1B", "1B"], ["2", "2"], ["3", "3"]], p.paper_number ? `${p.paper_number}${p.paper_part ?? ""}` : null)),
     field(tr("Type", "Tipo"), select("kind", [["paper", tr("Paper", "Examen")], ["markscheme", tr("Markscheme", "Esquema")], ["prerelease", tr("Pre-release statement", "Declaración de pre-publicación")]], p.kind)),
     h("label", { class: "check" }, h("input", { type: "checkbox", name: "reanalyse" }), tr("Re-split and re-tag questions now (replaces manual tags)", "Volver a dividir y etiquetar ahora (sustituye las etiquetas manuales)")),
     h("div", { class: "row" },
@@ -295,7 +295,8 @@ function editPaper(p: Paper): void {
           session: v("session"),
           timezone: v("timezone"),
           // A pre-release statement always belongs to Paper 1.
-          paper_number: kind === "prerelease" ? 1 : v("paper_number") ? Number(v("paper_number")) : null,
+          paper_number: kind === "prerelease" ? 1 : v("paper") ? Number(v("paper")!.charAt(0)) : null,
+          paper_part: kind === "prerelease" ? null : ((v("paper") ?? "").charAt(1) || null),
           kind,
           needs_review: false,
         };

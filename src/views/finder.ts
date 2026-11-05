@@ -178,7 +178,7 @@ async function renderPapers(body: HTMLElement): Promise<void> {
   body.replaceChildren(...[...byYear.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([year, ps]) =>
     h("div", { class: "card" }, h("h2", {}, year),
       h("ul", { class: "qlist" }, ...ps
-        .sort((a, b) => (a.session ?? "").localeCompare(b.session ?? "") || (a.timezone ?? "").localeCompare(b.timezone ?? "") || (a.paper_number ?? 0) - (b.paper_number ?? 0))
+        .sort((a, b) => (a.session ?? "").localeCompare(b.session ?? "") || (a.timezone ?? "").localeCompare(b.timezone ?? "") || (a.paper_number ?? 0) - (b.paper_number ?? 0) || (a.paper_part ?? "").localeCompare(b.paper_part ?? ""))
         .map((p) => h("li", { class: "row" },
           h("strong", {}, paperLabel(p)),
           withMs.has(pairKey(p)) ? "" : h("span", { class: "badge" }, tr("No markscheme", "Sin esquema")),

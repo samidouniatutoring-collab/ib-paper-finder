@@ -15,6 +15,7 @@ export type Level = "HL" | "SL" | "HL/SL";
 export type Session = "May" | "November";
 export type Timezone = "TZ0" | "TZ1" | "TZ2" | "TZ3";
 export type Kind = "paper" | "markscheme" | "prerelease";
+export type PaperPart = "A" | "B";
 
 export interface Detected {
   subject: SubjectId | null;
@@ -23,6 +24,8 @@ export interface Detected {
   session: Session | null;
   timezone: Timezone | null;
   paperNumber: number | null;
+  /** "A"/"B" for split papers such as SEHS Paper 1A and 1B; null otherwise. */
+  paperPart: PaperPart | null;
   kind: Kind;
   /** True when the kind came from the PDF's own pages (not just the file name). */
   kindFromPdf?: boolean;
@@ -91,9 +94,17 @@ function detectTimezone(s: string): Timezone | null {
   return `TZ${m[1] ?? m[2] ?? m[3]}` as Timezone;
 }
 
+// "paper 1", "paper 1a", "paper 1 b", "p2", "prueba 1a" (text is already lowercased by normalise).
+function matchPaper(s: string, strict: boolean): RegExpMatchArray | null {
+  return strict ? s.match(/\b(?:paper|prueba) ([1-3]) ?([ab])?\b/) : s.match(/\b(?:paper|prueba|p) ?([1-3]) ?([ab])?\b/);
+}
 function detectPaperNumber(s: string, strict = false): number | null {
-  const m = strict ? s.match(/\b(?:paper|prueba) ([1-3])\b/) : s.match(/\b(?:paper|prueba|p)\s?([1-3])\b/);
+  const m = matchPaper(s, strict);
   return m ? Number(m[1]) : null;
+}
+function detectPaperPart(s: string, strict = false): PaperPart | null {
+  const m = matchPaper(s, strict);
+  return m?.[2] ? (m[2].toUpperCase() as PaperPart) : null;
 }
 
 function detectKind(s: string, strict = false): Kind {
@@ -122,6 +133,7 @@ export interface PaperCode {
   year: number;
   level: Level | null;
   paperNumber: number | null;
+  paperPart: PaperPart | null;
   timezone: Timezone | null;
   markscheme: boolean;
 }
@@ -130,12 +142,12 @@ const CODE_SUBJECTS: Record<string, SubjectId> = {
   SPEXS: "sehs", SEHS: "sehs", SPANB: "spanish-b", ENGAL: "english-a-ll",
 };
 export function detectPaperCode(text: string): PaperCode | null {
-  const m = text.match(/\b([MN])(\d{2})\s*\/\s*\d\s*\/\s*([A-Z]{2,8})\s*\/\s*([SHB])?P([1-3])\s*\/\s*[A-Z]{3}(?:\s*\/\s*TZ([0-3]))?(?:\s*\/\s*XX)?(\s*\/\s*M\b)?/);
+  const m = text.match(/\b([MN])(\d{2})\s*\/\s*\d\s*\/\s*([A-Z]{2,8})\s*\/\s*([SHB])?P([1-3])([AB])?\s*\/\s*[A-Z]{3}(?:\s*\/\s*TZ([0-3]))?(?:\s*\/\s*XX)?(\s*\/\s*M\b)?/);
   if (!m) {
     // Question papers print a session number instead, e.g. "2226 – 5218": 22 = May, 88 = November, 26 = 2026.
     const n = text.match(/\b(22|88)(\d{2})\s*[–—-]\s*\d{4}\b/);
     if (!n) return null;
-    return { session: n[1] === "22" ? "May" : "November", year: 2000 + Number(n[2]), subject: null, level: null, paperNumber: null, timezone: null, markscheme: false };
+    return { session: n[1] === "22" ? "May" : "November", year: 2000 + Number(n[2]), subject: null, level: null, paperNumber: null, paperPart: null, timezone: null, markscheme: false };
   }
   return {
     session: m[1] === "M" ? "May" : "November",
@@ -143,8 +155,9 @@ export function detectPaperCode(text: string): PaperCode | null {
     subject: CODE_SUBJECTS[m[3]] ?? null,
     level: m[4] === "S" ? "SL" : m[4] === "H" ? "HL" : m[4] === "B" ? "HL/SL" : null,
     paperNumber: Number(m[5]),
-    timezone: m[6] !== undefined ? (`TZ${m[6]}` as Timezone) : null,
-    markscheme: Boolean(m[7]),
+    paperPart: (m[6] as PaperPart | undefined) ?? null,
+    timezone: m[7] !== undefined ? (`TZ${m[7]}` as Timezone) : null,
+    markscheme: Boolean(m[8]),
   };
 }
 
@@ -186,6 +199,7 @@ export function detectPaper(fileName: string, firstPageText = ""): Detected {
     session: fy.session ?? code?.session ?? ty.session,
     timezone: detectTimezone(f) ?? code?.timezone ?? detectTimezone(t),
     paperNumber: kind === "prerelease" ? 1 : detectPaperNumber(f) ?? code?.paperNumber ?? detectPaperNumber(t, true),
+    paperPart: kind === "prerelease" ? null : detectPaperPart(f) ?? code?.paperPart ?? detectPaperPart(t, true),
     kind,
     kindFromPdf: fromText !== null || isPrerelease(t, true),
   };
@@ -214,6 +228,7 @@ export function pairKey(p: {
   session: string | null;
   timezone: string | null;
   paper_number: number | null;
+  paper_part?: string | null;
 }): string {
-  return [p.subject, p.level, p.year, p.session, p.timezone ?? "TZ0", p.paper_number].join("|");
+  return [p.subject, p.level, p.year, p.session, p.timezone ?? "TZ0", p.paper_number, p.paper_part ?? ""].join("|");
 }

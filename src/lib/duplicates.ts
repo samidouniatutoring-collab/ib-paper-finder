@@ -11,6 +11,7 @@ export interface DupCandidate {
   session: string | null;
   timezone: string | null;
   paper_number: number | null;
+  paper_part?: string | null;
   original_name: string;
 }
 
@@ -30,7 +31,7 @@ export function overlap(a: Set<string>, b: Set<string>): number {
 /** Papers that could be the same exam: same subject, level, year, session and paper; timezone equal or unknown. */
 export function couldMatch(a: DupCandidate, b: DupCandidate): boolean {
   return a.kind === b.kind && a.subject === b.subject && a.level === b.level && a.year === b.year && a.session === b.session &&
-    a.paper_number === b.paper_number && (a.timezone === b.timezone || !a.timezone || !b.timezone);
+    a.paper_number === b.paper_number && (a.paper_part ?? null) === (b.paper_part ?? null) && (a.timezone === b.timezone || !a.timezone || !b.timezone);
 }
 
 /** Of two copies, keep the one with a known timezone, then the one with more text (scans read worse), then the older. */

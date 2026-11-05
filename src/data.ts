@@ -32,6 +32,7 @@ export interface Paper {
   session: string | null;
   timezone: string | null;
   paper_number: number | null;
+  paper_part: "A" | "B" | null;
   kind: "paper" | "markscheme" | "prerelease";
   page_count: number;
   needs_review: boolean;
@@ -103,7 +104,7 @@ export function paperLabel(p: Paper): string {
     p.year ?? "?",
     p.session ?? "",
     p.timezone && p.timezone !== "TZ0" ? p.timezone : "",
-    p.paper_number ? `Paper ${p.paper_number}` : "Paper ?",
+    p.paper_number ? `Paper ${p.paper_number}${p.paper_part ?? ""}` : "Paper ?",
     p.level ?? "",
   ];
   return parts.filter(Boolean).join(" · ");
@@ -152,7 +153,7 @@ export async function saveProgress(p: Progress): Promise<void> {
 /** The markscheme that belongs to a paper (same subject, level, year, session, timezone, paper number). */
 function findMarkschemeQuery(p: Paper, kind: Paper["kind"] = "markscheme") {
   let q = db().from("papers").select("*").eq("kind", kind);
-  for (const k of ["subject", "level", "year", "session", "timezone", "paper_number"] as const) {
+  for (const k of ["subject", "level", "year", "session", "timezone", "paper_number", "paper_part"] as const) {
     q = p[k] == null ? q.is(k, null) : q.eq(k, p[k] as string | number);
   }
   return q.order("created_at").limit(1);

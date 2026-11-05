@@ -121,4 +121,22 @@ describe("detectPaper", () => {
     // No text (e.g. unreadable scan): falls back to the file name.
     expect(detectPaper(name, "")).toMatchObject({ kind: "markscheme", kindFromPdf: false });
   });
+
+  it("reads SEHS Paper 1A / 1B", () => {
+    expect(detectPaper("Sports science/Sports_exercise_and_health_science_paper_1A_TZ1_SL.pdf")).toMatchObject({
+      subject: "sehs", level: "SL", timezone: "TZ1", paperNumber: 1, paperPart: "A", kind: "paper",
+    });
+    expect(detectPaper("Sports_exercise_and_health_science_paper_1B_TZ3_SL_markscheme.pdf")).toMatchObject({
+      paperNumber: 1, paperPart: "B", kind: "markscheme",
+    });
+    expect(detectPaper("Sports_exercise_and_health_science_paper_2_TZ2_SL.pdf")).toMatchObject({ paperNumber: 2, paperPart: null });
+    expect(detectPaper("scan.pdf", "Sports, exercise and health science\nStandard level\nPaper 1B\nInstructions to candidates")).toMatchObject({
+      paperNumber: 1, paperPart: "B", kind: "paper",
+    });
+    expect(detectPaperCode("M26/4/SPEXS/SP1A/ENG/TZ1/XX/M")).toMatchObject({ paperNumber: 1, paperPart: "A", timezone: "TZ1", markscheme: true });
+    // 1A and 1B never pair with each other's markscheme.
+    const base = { subject: "sehs", level: "SL", year: 2026, session: "May", timezone: "TZ1", paper_number: 1 };
+    expect(pairKey({ ...base, paper_part: "A" })).not.toBe(pairKey({ ...base, paper_part: "B" }));
+    expect(pairKey({ ...base, paper_part: null })).toBe(pairKey(base));
+  });
 });
