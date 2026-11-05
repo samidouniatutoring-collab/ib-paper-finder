@@ -46,7 +46,8 @@ export function detectMarks(text: string): number | null {
  */
 export function onlyHeaderBefore(pageText: string, line: number): boolean {
   if (line === 0) return true;
-  const before = pageText.split(/\r?\n/).slice(0, line).filter((l) => l.trim());
+  const furniture = /^(turn over|please do not write on this page\.?|answers written on this page will not be marked\.?|blank page|\(?question \d+ continued\)?|[\s.·…]+)$/i;
+  const before = pageText.split(/\r?\n/).slice(0, line).map((l) => l.trim()).filter((l) => l && !furniture.test(l));
   return before.length <= 4 && before.every((l) => !/[a-z]{3,}/.test(l));
 }
 

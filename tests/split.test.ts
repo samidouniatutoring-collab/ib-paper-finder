@@ -61,6 +61,7 @@ describe("IB page headers", () => {
     const q2 = qs.find((q) => q.number === 2)!;
     expect([q2.startPage, q2.endPage, q2.marks]).toEqual([2, 2, 6]);
     expect(onlyHeaderBefore(pages[2], 3)).toBe(true);
+    expect(onlyHeaderBefore("– 3 – 2226 – 5218\nTurn over\n20EP03\n2. [Maximum mark: 6]", 3)).toBe(true);
     expect(onlyHeaderBefore("Some question text continues here\n3. [Maximum mark: 5]", 1)).toBe(false);
   });
   it("uses the official pace for Math AI SL and Business", () => {

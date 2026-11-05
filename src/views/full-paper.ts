@@ -19,8 +19,10 @@ export async function fullPaperView(root: HTMLElement, id: string): Promise<void
     findPrerelease(p).catch(() => null),
     db().from("questions").select("marks").eq("paper_id", p.id),
   ]);
-  const totalMarks = (marksRes.data ?? []).reduce((a: number, q: { marks: number | null }) => a + (q.marks ?? 0), 0) || null;
-  const minutes = p.subject && p.paper_number ? COURSES[p.subject as SubjectId]?.examMinutes[p.paper_number] : undefined;
+  const course = p.subject ? COURSES[p.subject as SubjectId] : undefined;
+  const official = p.paper_number ? course?.examMarks?.[p.paper_number] : undefined;
+  const totalMarks = official ?? ((marksRes.data ?? []).reduce((a: number, q: { marks: number | null }) => a + (q.marks ?? 0), 0) || null);
+  const minutes = p.paper_number ? course?.examMinutes[p.paper_number] : undefined;
   const total = minutes ? minutes * 60 : null;
 
   const clock = h("span", { class: "clock", role: "timer", "aria-live": "off" });

@@ -8,11 +8,13 @@ export interface Course {
   papers: number[];
   /** Official exam length in minutes per paper (reading time not included), when known. */
   examMinutes: Partial<Record<number, number>>;
+  /** Official total marks per paper, when known. */
+  examMarks?: Partial<Record<number, number>>;
 }
 
 export const COURSES: Record<SubjectId, Course> = {
-  business: { level: "HL", papers: [1, 2, 3], examMinutes: { 1: 90, 2: 105, 3: 75 } },
-  "math-ai": { level: "SL", papers: [1, 2], examMinutes: { 1: 90, 2: 90 } },
+  business: { level: "HL", papers: [1, 2, 3], examMinutes: { 1: 90, 2: 105, 3: 75 }, examMarks: { 1: 30, 2: 50, 3: 25 } },
+  "math-ai": { level: "SL", papers: [1, 2], examMinutes: { 1: 90, 2: 90 }, examMarks: { 1: 80, 2: 80 } },
   psychology: { level: "HL", papers: [1, 2, 3], examMinutes: {} },
   sehs: { level: "SL", papers: [1, 2], examMinutes: {} },
   "spanish-b": { level: "SL", papers: [1, 2], examMinutes: {} },
