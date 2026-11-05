@@ -34,7 +34,7 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
       self.postMessage({ id: msg.id, result: hex });
       return;
     }
-    const detected = { ...detectPaper(msg.name, msg.pages[0] ?? ""), ...msg.override };
+    const detected = { ...detectPaper(msg.name, msg.pages.slice(0, 3).join("\n")), ...msg.override };
     const topics = detected.subject ? TOPIC_MAPS[detected.subject as SubjectId] : [];
     // Pre-release statements are never split into questions (and so never tagged).
     const parts = detected.kind === "prerelease" ? [] : splitQuestions(msg.pages);

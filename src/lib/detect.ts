@@ -110,27 +110,59 @@ function isPrerelease(s: string, strict = false): boolean {
   return PRERELEASE.test(strict ? s.slice(0, 300) : s);
 }
 
-/** Combine file name (preferred) and first-page text (fallback) into one result. */
+/**
+ * IB paper code printed at the top of the pages, e.g. "M24/5/MATAI/SP2/ENG/TZ1/XX" (paper) or
+ * ".../TZ1/XX/M" (markscheme): session + year, level (S/H/B), paper number and timezone.
+ */
+export interface PaperCode {
+  subject: SubjectId | null;
+  session: Session;
+  year: number;
+  level: Level | null;
+  paperNumber: number | null;
+  timezone: Timezone | null;
+  markscheme: boolean;
+}
+const CODE_SUBJECTS: Record<string, SubjectId> = {
+  MATAI: "math-ai", MATHAI: "math-ai", BUSMT: "business", BUSMG: "business", PSYCH: "psychology",
+  SPEXS: "sehs", SEHS: "sehs", SPANB: "spanish-b", ENGAL: "english-a-ll",
+};
+export function detectPaperCode(text: string): PaperCode | null {
+  const m = text.match(/\b([MN])(\d{2})\s*\/\s*\d\s*\/\s*([A-Z]{2,8})\s*\/\s*([SHB])?P([1-3])\s*\/\s*[A-Z]{3}(?:\s*\/\s*TZ([0-3]))?(?:\s*\/\s*XX)?(\s*\/\s*M\b)?/);
+  if (!m) return null;
+  return {
+    session: m[1] === "M" ? "May" : "November",
+    year: 2000 + Number(m[2]),
+    subject: CODE_SUBJECTS[m[3]] ?? null,
+    level: m[4] === "S" ? "SL" : m[4] === "H" ? "HL" : m[4] === "B" ? "HL/SL" : null,
+    paperNumber: Number(m[5]),
+    timezone: m[6] !== undefined ? (`TZ${m[6]}` as Timezone) : null,
+    markscheme: Boolean(m[7]),
+  };
+}
+
+/** Combine file name (preferred), the IB paper code and first-page text (fallbacks) into one result. */
 export function detectPaper(fileName: string, firstPageText = ""): Detected {
   const base = fileName.split(/[\\/]/).pop() ?? fileName;
   const f = normalise(base);
   const t = normalise(firstPageText.slice(0, 2000));
+  const code = detectPaperCode(firstPageText);
   const fy = detectSessionYear(f);
   const ty = detectSessionYear(t, true);
   // Markscheme wins over pre-release, which wins over paper. A pre-release statement is always Paper 1.
   const kind: Kind =
-    detectKind(f) === "markscheme" || detectKind(t, true) === "markscheme"
+    detectKind(f) === "markscheme" || detectKind(t, true) === "markscheme" || code?.markscheme
       ? "markscheme"
       : isPrerelease(f) || isPrerelease(t, true)
         ? "prerelease"
         : "paper";
   return {
-    subject: detectSubject(f) ?? detectSubject(t),
-    level: detectLevel(f) ?? detectLevel(t),
-    year: fy.year ?? ty.year,
-    session: fy.session ?? ty.session,
-    timezone: detectTimezone(f) ?? detectTimezone(t),
-    paperNumber: kind === "prerelease" ? 1 : detectPaperNumber(f) ?? detectPaperNumber(t, true),
+    subject: detectSubject(f) ?? code?.subject ?? detectSubject(t),
+    level: detectLevel(f) ?? code?.level ?? detectLevel(t),
+    year: fy.year ?? code?.year ?? ty.year,
+    session: fy.session ?? code?.session ?? ty.session,
+    timezone: detectTimezone(f) ?? code?.timezone ?? detectTimezone(t),
+    paperNumber: kind === "prerelease" ? 1 : detectPaperNumber(f) ?? code?.paperNumber ?? detectPaperNumber(t, true),
     kind,
   };
 }

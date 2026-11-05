@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectPaper, pairKey } from "../src/lib/detect";
+import { detectPaperCode, detectPaper, pairKey } from "../src/lib/detect";
 
 describe("detectPaper", () => {
   it("detects pre-release statements as Paper 1", () => {
@@ -80,5 +80,18 @@ describe("detectPaper", () => {
     expect(detectPaper("Mathematics_applications_and_interpretation_paper_2_TZ3_SL_markscheme.pdf")).toMatchObject({
       timezone: "TZ3", paperNumber: 2, kind: "markscheme",
     });
+  });
+  it("reads the IB paper code on the pages when the file name has no year", () => {
+    const pages = "Mathematics: applications and interpretation\nStandard level\nPaper 2\n\n– 2 – M24/5/MATAI/SP2/ENG/TZ1/XX\n1. [Maximum mark: 14]";
+    expect(detectPaper("Mathematics_applications_and_interpretation_paper_2_TZ1_SL.pdf", pages)).toMatchObject({
+      subject: "math-ai", level: "SL", year: 2024, session: "May", timezone: "TZ1", paperNumber: 2, kind: "paper",
+    });
+    expect(detectPaper("Mathematics_applications_and_interpretation_paper_2_TZ3_SL_markscheme.pdf", "Markscheme\nN23/5/MATAI/SP2/ENG/TZ3/XX/M")).toMatchObject({
+      year: 2023, session: "November", timezone: "TZ3", paperNumber: 2, kind: "markscheme",
+    });
+    expect(detectPaper("Math AISL Paper 2 TZA.pdf", "– 3 – M25/5/MATAI/SP2/ENG/TZ2/XX")).toMatchObject({
+      subject: "math-ai", year: 2025, session: "May", timezone: "TZ2", paperNumber: 2, level: "SL",
+    });
+    expect(detectPaperCode("M24/3/BUSMT/HP3/ENG/TZ0/XX")).toMatchObject({ level: "HL", paperNumber: 3, year: 2024 });
   });
 });
