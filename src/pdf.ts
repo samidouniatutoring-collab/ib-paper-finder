@@ -96,7 +96,7 @@ export function loadPaperDoc(storagePath: string): Promise<PDFDocumentProxy> {
   return d;
 }
 
-/** Renders one page into a new canvas sized to `width` CSS pixels, with a light diagonal watermark. */
+/** Renders one page into a new canvas sized to `width` CSS pixels, with a small "shared with" footer. */
 export async function renderPage(doc: PDFDocumentProxy, pageNumber: number, width: number, watermark: string): Promise<HTMLCanvasElement> {
   const page = await doc.getPage(pageNumber);
   const base = page.getViewport({ scale: 1 });
@@ -116,15 +116,8 @@ export async function renderPage(doc: PDFDocumentProxy, pageNumber: number, widt
 function drawWatermark(canvas: HTMLCanvasElement, text: string): void {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
+  // Footer only (bottom left): who it was shared with.
   const size = Math.max(12, canvas.width / 40);
-  ctx.save();
-  ctx.font = `${size}px -apple-system, system-ui, sans-serif`;
-  ctx.fillStyle = "rgba(30, 58, 138, 0.10)";
-  ctx.translate(canvas.width / 2, canvas.height / 2);
-  ctx.rotate(-Math.PI / 6);
-  ctx.textAlign = "center";
-  for (let y = -canvas.height; y < canvas.height; y += size * 8) ctx.fillText(text, 0, y);
-  ctx.restore();
   ctx.font = `${size * 0.7}px -apple-system, system-ui, sans-serif`;
   ctx.fillStyle = "rgba(30, 58, 138, 0.35)";
   ctx.fillText(text, size, canvas.height - size);

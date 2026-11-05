@@ -44,8 +44,8 @@ export async function signupView(root: HTMLElement): Promise<void> {
   root.replaceChildren(h("div", { class: "card narrow" },
     h("h1", {}, tr("Request access", "Solicitar acceso")),
     h("p", { class: "notice" }, tr(
-      "Access is invite-only for SIS students. Your request goes to Sami for approval.",
-      "El acceso es solo por invitación para alumnos de SIS. Tu solicitud le llega a Sami para que la apruebe.",
+      "Access is invite-only for Sami's tutoring students. Your request goes to Sami for approval.",
+      "El acceso es solo por invitación para los alumnos de clases particulares de Sami. Tu solicitud le llega a Sami para que la apruebe.",
     )),
     domain ? h("p", { class: "small muted" }, `${tr("Use your", "Usa tu correo")} @${domain} ${tr("email address.", "")}`) : "",
     form([

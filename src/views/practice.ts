@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, degrees, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { canDownload, isOwner, markschemeFor, watermarkText, type Question } from "../data";
 import { createHomeworkFrom } from "./homework";
 import { tr } from "../i18n";
@@ -42,9 +42,7 @@ async function makePdf(parts: { path: string; start: number; end: number }[]): P
     for (let i = part.start; i <= Math.min(part.end, src.getPageCount()); i++) idx.push(i - 1);
     for (const page of await out.copyPages(src, idx)) {
       out.addPage(page);
-      const { width, height } = page.getSize();
       page.drawText(mark, { x: 24, y: 14, size: 8, font, color: rgb(0.12, 0.23, 0.54), opacity: 0.6 });
-      page.drawText(mark, { x: width * 0.15, y: height * 0.3, size: 18, font, color: rgb(0.12, 0.23, 0.54), opacity: 0.08, rotate: degrees(30) });
     }
   }
   return out.save();

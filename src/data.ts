@@ -69,7 +69,7 @@ export const state: { profile: Profile | null; settings: Settings } = {
 export const isOwner = () => state.profile?.role === "owner";
 export const canDownload = () => isOwner() || state.settings.allow_downloads;
 export const watermarkText = () =>
-  `Shared with ${state.profile?.full_name || state.profile?.email || ""} · for SIS students only`;
+  `Shared with ${state.profile?.full_name || state.profile?.email || ""} · for tutoring students only`;
 
 export function db() {
   if (!supabase) throw new Error("Not configured");
