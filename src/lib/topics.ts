@@ -12,6 +12,10 @@ export interface Topic {
   nameEs?: string;
   group: string;
   keywords: string[];
+  /** Words that name the topic outright: each adds 3, so one alone gives a strong match. */
+  strong?: string[];
+  /** Word groups that only count together (each complete group adds 3), e.g. "rate of change" + "find an expression for". */
+  together?: string[][];
   papers?: number[];
   level?: string;
   marks?: number[];

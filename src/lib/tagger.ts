@@ -38,7 +38,7 @@ export function matchLabel(hint: "high" | "medium" | "low" | "owner", es = false
 }
 
 /**
- * Scores each topic: every distinct keyword found adds 1 (multi-word keywords add 2).
+ * Scores each topic: every distinct keyword found adds 1 (multi-word keywords add 2, strong keywords 3).
  * Returns up to `max` (default 4) keyword topics (plus any marks-based topics such as SAQ/ERQ).
  */
 export function tagQuestion(
@@ -58,6 +58,9 @@ export function tagQuestion(
     }
     let score = 0;
     for (const k of topic.keywords) if (keywordRe(k).test(t)) score += k.trim().includes(" ") ? 2 : 1;
+    // Strong keywords name the topic outright ("integral", "simultaneous equations"): one is enough for a strong match.
+    for (const k of topic.strong ?? []) if (keywordRe(k).test(t)) score += 3;
+    for (const g of topic.together ?? []) if (g.every((k) => keywordRe(k).test(t))) score += 3;
     if (score > 0) scored.push({ code: topic.code, group: topic.group, score });
   }
   scored.sort((a, b) => b.score - a.score);

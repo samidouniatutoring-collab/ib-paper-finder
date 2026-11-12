@@ -91,11 +91,14 @@ async function saveQuestions(paperId: string, analysis: Analysis): Promise<void>
   if (error) throw error;
   const idByNumber = new Map((data ?? []).map((r: { id: string; number: number }) => [r.number, r.id]));
   const ids = [...idByNumber.values()];
-  const { error: delTags } = await client.from("question_tags").delete().in("question_id", ids);
+  // Only automatic tags are redone; tags you added or checked yourself stay.
+  const { error: delTags } = await client.from("question_tags").delete().in("question_id", ids).eq("source", "auto");
   if (delTags) throw delTags;
+  const { data: mine } = await client.from("question_tags").select("question_id, topic").in("question_id", ids).eq("source", "owner");
+  const kept = new Set((mine ?? []).map((r: { question_id: string; topic: string }) => `${r.question_id}|${r.topic}`));
   const tags = analysis.questions.flatMap((q) =>
     q.tags.map((t) => ({ question_id: idByNumber.get(q.number), topic: t.topic, confidence: t.confidence, source: "auto" })),
-  );
+  ).filter((t) => !kept.has(`${t.question_id}|${t.topic}`));
   if (tags.length) {
     const { error: tagErr } = await client.from("question_tags").insert(tags);
     if (tagErr) throw tagErr;

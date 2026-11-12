@@ -45,4 +45,15 @@ describe("tagQuestion", () => {
       expect(findTopic(`${subject}:${codes[0]}`)?.code).toBe(codes[0]);
     }
   });
+
+  it("Math AI: integration from a rate of change, equations, approximation instructions", () => {
+    const math = TOPIC_MAPS["math-ai"];
+    const codes = (text: string, paperNumber = 2) => tagQuestion(text, math, { paperNumber }).map((x) => x.code);
+    const conf = (text: string, code: string) => tagQuestion(text, math, { paperNumber: 1 }).find((x) => x.code === code)?.confidence ?? 0;
+    expect(codes("the rate of change of the height of the plant is modelled as dh/dt = 1.2 - 0.1t. (c) find an expression for h in terms of t")).toContain("5.5");
+    expect(codes("the lowest point of the ball passes through the points (1, 2.8), (2, 2.86) and (3, 2.89). write down three equations in terms of a, b and c", 1)).toContain("1.8");
+    expect(codes("find the cost of the car. give your answer correct to the nearest dollar")).not.toContain("1.6");
+    expect(codes("calculate the percentage error in her estimate")).toContain("1.6");
+    expect(conf("find the integral of f(x) between x = 0 and x = 2", "5.5")).toBeGreaterThanOrEqual(0.75);
+  });
 });

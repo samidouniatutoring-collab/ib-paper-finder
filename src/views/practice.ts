@@ -3,12 +3,14 @@ import { canDownload, isOwner, markschemeFor, watermarkText, type Question } fro
 import { createHomeworkFrom } from "./homework";
 import { tr } from "../i18n";
 import { loadPaperBytes, openPdf, renderPage } from "../pdf";
-import { errorText, h, toast } from "../ui";
+import { errorText, h, spinner, toast } from "../ui";
 
 /** Questions ticked for the practice set (kept while the tab is open). */
 export const selection = new Map<string, Question>();
 
 let bar: HTMLElement | null = null;
+/** True while a set is being built: the button is replaced by a spinner so it can't be clicked twice. */
+let building = false;
 
 export function practiceBar(): HTMLElement {
   const el = bar ?? h("div", { class: "practice-bar" });
@@ -19,9 +21,11 @@ export function practiceBar(): HTMLElement {
   el.replaceChildren(
     h("span", {}, `${n} ${tr("selected", "seleccionadas")}`),
     h("label", { class: "check" }, withMs, tr("Markscheme too", "Con esquema")),
-    h("button", { class: "btn", onclick: () => void build(withMs.checked) }, tr("Make practice set", "Crear práctica")),
+    building
+      ? h("span", { class: "row small" }, spinner(tr("Building practice set…", "Creando práctica…")))
+      : h("button", { class: "btn", onclick: () => void build(withMs.checked) }, tr("Make practice set", "Crear práctica")),
     isOwner() ? h("button", { class: "btn btn-secondary", onclick: () => void createHomeworkFrom([...selection.values()]).then((ok) => { if (ok) { selection.clear(); practiceBar(); } }) }, tr("Set as homework", "Poner como deberes")) : "",
-    h("button", { class: "btn btn-ghost", onclick: () => { selection.clear(); practiceBar(); document.querySelectorAll<HTMLInputElement>(".qrow input").forEach((b) => (b.checked = false)); } }, tr("Clear", "Vaciar")),
+    h("button", { class: "btn btn-ghost", onclick: () => { selection.clear(); practiceBar(); document.querySelectorAll<HTMLInputElement>(".qrow input, .search-hit input[type=checkbox]").forEach((b) => (b.checked = false)); } }, tr("Clear", "Vaciar")),
   );
   return el;
 }
@@ -49,9 +53,11 @@ async function makePdf(parts: { path: string; start: number; end: number }[]): P
 }
 
 async function build(withMs: boolean): Promise<void> {
+  if (building) return;
   const qs = [...selection.values()];
+  building = true;
+  practiceBar();
   try {
-    toast(tr("Building practice set…", "Creando práctica…"));
     const paper = await makePdf(qs.map((q) => ({ path: q.papers!.storage_path, start: q.start_page, end: q.end_page })));
     let ms: Uint8Array | null = null;
     if (withMs) {
@@ -62,6 +68,9 @@ async function build(withMs: boolean): Promise<void> {
     showSet(paper, ms);
   } catch (e) {
     toast(errorText(e), true);
+  } finally {
+    building = false;
+    practiceBar();
   }
 }
 

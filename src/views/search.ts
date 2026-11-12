@@ -1,4 +1,5 @@
-import { db, paperLabel, subjectName, type Paper } from "../data";
+import { db, paperLabel, subjectName, type Paper, type Question } from "../data";
+import { practiceBar, selection } from "./practice";
 import { tr } from "../i18n";
 import { SUBJECTS } from "../lib/detect";
 import { snippetParts } from "../lib/snippet";
@@ -73,14 +74,30 @@ export async function searchView(root: HTMLElement, params: URLSearchParams): Pr
     results.replaceChildren(h("p", { class: "muted" }, tr("No questions found. Try fewer or different words.", "No se han encontrado preguntas. Prueba con menos palabras u otras.")));
     return;
   }
+  // Full question rows (paper file, pages) so ticked results can go into a practice set or homework.
+  const { data: full } = await db().from("questions").select("*, papers(*), question_tags(*)").in("id", hits.map((x) => x.question_id));
+  const byId = new Map(((full ?? []) as Question[]).map((x) => [x.id, x]));
+  const tick = (id: string) => {
+    const question = byId.get(id);
+    if (!question) return "";
+    const box = h("input", { type: "checkbox", checked: selection.has(id), "aria-label": tr("Add to practice set", "Añadir a la práctica") });
+    box.addEventListener("change", () => {
+      if (box.checked) selection.set(id, question);
+      else selection.delete(id);
+      practiceBar();
+    });
+    return box;
+  };
   results.replaceChildren(
-    h("p", { class: "muted small" }, `${hits.length}${hits.length === 100 ? "+" : ""} ${tr("results", "resultados")}`),
+    h("p", { class: "muted small" }, `${hits.length}${hits.length === 100 ? "+" : ""} ${tr("results", "resultados")} · ${tr("tick questions to make a practice set", "marca preguntas para crear una práctica")}`),
     h("ul", { class: "qlist" }, ...hits.map((hit) => h("li", { class: "search-hit" },
+      h("div", { class: "search-hit-head" }, tick(hit.question_id),
       h("a", { href: `#/q/${hit.question_id}` },
         h("strong", {}, `${subjectName(hit.subject)} · ${paperLabel(hit as unknown as Paper)} · ${hit.page_level ? tr("page", "pág.") + " " + hit.start_page : "Q" + hit.label}`),
         hit.marks != null ? h("span", { class: "muted small" }, ` · ${hit.marks} ${tr("marks", "puntos")}`) : "",
-      ),
+      )),
       h("p", { class: "snippet" }, ...snippetParts(hit.snippet).map((p) => (p.hit ? h("mark", {}, p.text) : p.text))),
     ))),
+    practiceBar(),
   );
 }
