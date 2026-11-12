@@ -6,7 +6,7 @@ import { lang, tr } from "../i18n";
 import { expandAssignees, homeworkSummary, type HomeworkSummary } from "../lib/homework";
 import { errorText, h, spinner, toast } from "../ui";
 import { submit } from "../submissions";
-import type { Submission } from "../data";
+import type { MarkschemeRule, Submission } from "../data";
 
 export function dueText(d: string | null): string {
   if (!d) return tr("No due date", "Sin fecha de entrega");
@@ -144,7 +144,7 @@ export async function homeworkSetView(root: HTMLElement, id: string): Promise<vo
       h("div", { class: "row" },
         h("a", { href: `#/q/${q.id}` }, h("strong", {}, questionTitle(q))),
         h("span", { class: "muted small" }, q.marks != null ? `${q.marks} ${tr("marks", "puntos")}` : ""),
-        h("a", { class: "btn btn-small btn-secondary", href: `#/q/${q.id}` }, tr("Open question + markscheme", "Abrir pregunta y esquema")),
+        h("a", { class: "btn btn-small btn-secondary", href: `#/q/${q.id}` }, tr("Open question", "Abrir pregunta")),
       ),
       h("div", { class: "row" },
         h("label", { class: "check" }, done, tr("Done", "Hecha")),
@@ -231,7 +231,15 @@ async function ownerSetView(root: HTMLElement, set: HomeworkSet, its: HomeworkIt
     location.hash = "#/homework";
   };
 
+  const rule = markschemeSelect(set.markscheme ?? "after_marking");
+  rule.addEventListener("change", async () => {
+    const { error } = await db().from("homework_sets").update({ markscheme: rule.value }).eq("id", set.id);
+    if (error) return toast(errorText(error), true);
+    set.markscheme = rule.value as MarkschemeRule;
+    toast(tr("Saved", "Guardado"));
+  });
   root.replaceChildren(...header,
+    h("label", { class: "field" }, h("span", {}, tr("Markscheme for students", "Esquema para los alumnos")), rule),
     h("div", { class: "row" },
       h("button", { class: "btn btn-small btn-secondary", onclick: addStudents }, tr("Assign to more students", "Asignar a más alumnos")),
       h("button", { class: "btn btn-small btn-danger", onclick: remove }, tr("Delete set", "Eliminar deberes")),
@@ -283,11 +291,13 @@ export async function createHomeworkFrom(questions: Question[]): Promise<boolean
   const title = h("input", { name: "title", required: true, placeholder: tr("e.g. Unit 2 practice", "p. ej. Práctica tema 2") });
   const due = h("input", { name: "due", type: "date" });
   const note = h("textarea", { name: "note", rows: 2, placeholder: tr("Note for students (optional)", "Nota para los alumnos (opcional)") });
+  const rule = markschemeSelect("after_marking");
   const top = h("div", { class: "stack" },
     h("h2", {}, `${tr("Set as homework", "Poner como deberes")} · ${questions.length} ${tr("questions", "preguntas")}`),
     h("label", { class: "field" }, h("span", {}, tr("Title", "Título")), title),
     h("label", { class: "field" }, h("span", {}, tr("Due date (optional)", "Fecha de entrega (opcional)")), due),
     h("label", { class: "field" }, h("span", {}, tr("Note", "Nota")), note),
+    h("label", { class: "field" }, h("span", {}, tr("Markscheme for students", "Esquema para los alumnos")), rule),
     h("h3", {}, tr("Assign to", "Asignar a")),
   );
   const picked = await pickAssignees(students, top);
@@ -298,7 +308,7 @@ export async function createHomeworkFrom(questions: Question[]): Promise<boolean
   }
   try {
     const { data, error } = await db().from("homework_sets")
-      .insert({ title: title.value.trim(), due_date: due.value || null, note: note.value.trim() }).select("id").single();
+      .insert({ title: title.value.trim(), due_date: due.value || null, note: note.value.trim(), markscheme: rule.value }).select("id").single();
     if (error) throw error;
     const setId = (data as { id: string }).id;
     const { error: e1 } = await db().from("homework_items").insert(questions.map((q, i) => ({ set_id: setId, question_id: q.id, position: i + 1 })));
@@ -348,5 +358,13 @@ async function submitPanel(setId: string): Promise<HTMLElement> {
       : h("p", { class: "muted small" }, tr("Take a clear photo of each page of your working (or a PDF) and send it. Your tutor marks it and sends you feedback here. Keep your own copy: photos are deleted from the app once they're marked.",
           "Haz una foto clara de cada página (o un PDF) y envíala. Tu profesor la corrige y te deja el comentario aquí. Guarda tu propia copia: las fotos se borran de la app cuando se corrigen.")),
     files, note, h("div", { class: "row" }, send), status,
+  );
+}
+
+/** Owner: when students may open the markscheme of a homework set. */
+function markschemeSelect(value: MarkschemeRule): HTMLSelectElement {
+  return h("select", { name: "markscheme" },
+    h("option", { value: "after_marking", selected: value === "after_marking" }, tr("Hidden until I've marked it", "Oculto hasta que lo corrija")),
+    h("option", { value: "straight_away", selected: value === "straight_away" }, tr("Straight away", "Desde el principio")),
   );
 }

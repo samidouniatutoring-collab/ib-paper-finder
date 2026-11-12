@@ -1,5 +1,5 @@
 import { supabase } from "./config";
-import { SUBJECTS } from "./lib/detect";
+import { pairKey, SUBJECTS } from "./lib/detect";
 import { lang } from "./i18n";
 import { withOffline } from "./offline";
 
@@ -191,7 +191,10 @@ export interface HomeworkSet {
   due_date: string | null;
   note: string;
   created_at: string;
+  /** When students may open the markscheme: after you've marked their homework, or straight away. */
+  markscheme?: MarkschemeRule;
 }
+export type MarkschemeRule = "after_marking" | "straight_away";
 
 export interface HomeworkItem {
   set_id: string;
@@ -208,6 +211,8 @@ export interface HomeworkAssignment {
   owner_comment: string;
   owner_comment_at: string | null;
   owner_score?: number | null;
+  /** Set when you save marks in Marking; unlocks "after marking" markschemes. */
+  marked_at?: string | null;
 }
 
 export interface Submission {
@@ -323,4 +328,24 @@ export async function saveMarkschemeRange(q: Question, ms: Paper, range: { start
     question_id: q.id, markscheme_id: ms.id, start_page: range.start, end_page: range.end, source: "owner", updated_at: new Date().toISOString(),
   });
   if (error) throw error;
+}
+
+/**
+ * True when this question's markscheme is locked for the signed-in student: the paper is in one of their homework
+ * sets that shows the markscheme only after marking, and you haven't marked it yet. (The database enforces the same
+ * rule; this is only for the message.)
+ */
+export async function markschemeLocked(q: Question): Promise<boolean> {
+  if (isOwner() || !state.profile) return false;
+  const { data, error } = await db()
+    .from("homework_assignments")
+    .select("marked_at, homework_sets!inner(markscheme, homework_items(questions(papers(*))))")
+    .eq("user_id", state.profile.id)
+    .is("marked_at", null)
+    .eq("homework_sets.markscheme", "after_marking");
+  if (error) return false;
+  const key = pairKey(q.papers!);
+  type Row = { homework_sets: { homework_items: { questions: { papers: Paper | null } | null }[] } };
+  return ((data ?? []) as unknown as Row[]).some((r) =>
+    r.homework_sets.homework_items.some((it) => it.questions?.papers && pairKey(it.questions.papers) === key));
 }

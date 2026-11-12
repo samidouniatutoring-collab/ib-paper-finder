@@ -61,7 +61,7 @@ async function submissionView(root: HTMLElement, id: string): Promise<void> {
   feedback.value = asg?.owner_comment ?? "";
   const save = async (): Promise<boolean> => {
     const { error: e } = await db().from("homework_assignments")
-      .update({ owner_score: score.value === "" ? null : Number(score.value), owner_comment: feedback.value.trim(), owner_comment_at: new Date().toISOString() })
+      .update({ owner_score: score.value === "" ? null : Number(score.value), owner_comment: feedback.value.trim(), owner_comment_at: new Date().toISOString(), marked_at: new Date().toISOString() })
       .eq("set_id", s.set_id).eq("user_id", s.user_id);
     if (e) { toast(errorText(e), true); return false; }
     toast(tr("Saved: the student sees it in the app", "Guardado: el alumno lo ve en la app"));

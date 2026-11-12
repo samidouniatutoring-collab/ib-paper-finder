@@ -455,11 +455,30 @@ alter table public.papers add constraint papers_session_check check (session in 
 -- Split papers such as SEHS Paper 1A / 1B (null for normal papers). Must exist before can_see_paper uses it.
 alter table public.papers add column if not exists paper_part text check (paper_part in ('A', 'B'));
 
+-- Homework markschemes: per set, students see the markscheme straight away or only after you've marked it.
+alter table public.homework_sets add column if not exists markscheme text not null default 'after_marking'
+  check (markscheme in ('after_marking', 'straight_away'));
+alter table public.homework_assignments add column if not exists marked_at timestamptz;
+
 create or replace function public.can_see_paper(p_id uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select case
     when public.is_owner() then true
     when not public.is_approved() then false
+    -- A markscheme stays locked while its paper is in one of my unmarked "after marking" homework sets.
+    when p.kind = 'markscheme' and exists (
+      select 1
+      from public.homework_assignments ha
+      join public.homework_sets hs on hs.id = ha.set_id
+      join public.homework_items hi on hi.set_id = ha.set_id
+      join public.questions q on q.id = hi.question_id
+      join public.papers hp on hp.id = q.paper_id
+      where ha.user_id = auth.uid() and hs.markscheme = 'after_marking' and ha.marked_at is null
+        and hp.subject is not distinct from p.subject and hp.level is not distinct from p.level
+        and hp.year is not distinct from p.year and hp.session is not distinct from p.session
+        and hp.timezone is not distinct from p.timezone and hp.paper_number is not distinct from p.paper_number
+        and hp.paper_part is not distinct from p.paper_part
+    ) then false
     when me.access = 'full' then me.subjects is null or p.subject = any (me.subjects)
     else exists (
       select 1

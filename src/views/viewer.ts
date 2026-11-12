@@ -1,5 +1,5 @@
 import type { PDFDocumentProxy } from "pdfjs-dist/legacy/build/pdf.mjs";
-import { db, findPrerelease, isOwner, loadPaper, loadQuestion, markschemeFor, saveMarkschemeRange, type MarkschemePart, loadMyProgress, paperLabel, saveProgress, subjectName, watermarkText, type Paper, type Question, type Tag } from "../data";
+import { db, findPrerelease, isOwner, markschemeLocked, loadPaper, loadQuestion, markschemeFor, saveMarkschemeRange, type MarkschemePart, loadMyProgress, paperLabel, saveProgress, subjectName, watermarkText, type Paper, type Question, type Tag } from "../data";
 import { tr } from "../i18n";
 import type { SubjectId } from "../lib/detect";
 import { confidenceHint, matchLabel } from "../lib/tagger";
@@ -40,7 +40,7 @@ export async function questionView(root: HTMLElement, id: string): Promise<void>
   root.replaceChildren(spinner(tr("Opening…", "Abriendo…")));
   const q = await loadQuestion(id);
   const paper = q.papers!;
-  const [found, pre] = await Promise.all([markschemeFor(q), findPrerelease(paper).catch(() => null)]);
+  const [found, pre, locked] = await Promise.all([markschemeFor(q).catch(() => null), findPrerelease(paper).catch(() => null), markschemeLocked(q)]);
   const left = h("div", { class: "pages" });
   const right = h("div", { class: "pages" });
   const msSection = h("section", { class: "ms-section" });
@@ -65,7 +65,9 @@ export async function questionView(root: HTMLElement, id: string): Promise<void>
     await showMarkscheme(right, found, width).catch((e) => right.replaceChildren(h("p", { class: "muted" }, errorText(e))));
     if (isOwner() && found) right.before(msRangeEditor(q, found, right, width));
   });
-  msSection.replaceChildren(reveal);
+  msSection.replaceChildren(locked
+    ? h("p", { class: "card notice" }, tr("The markscheme unlocks once your tutor has marked this homework.", "El esquema se desbloquea cuando tu profesor haya corregido estos deberes."))
+    : reveal);
 }
 
 /** Link to the pre-release statement of a Paper 1 question. */
