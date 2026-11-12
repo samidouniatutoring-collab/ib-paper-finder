@@ -47,4 +47,20 @@ describe("splitMarkscheme", () => {
     expect(splitMarkscheme(["no numbers here"], [1, 2]).size).toBe(0);
     expect(splitMarkscheme([], [1]).size).toBe(0);
   });
+
+  it("'Question 1 continued' headers are not where the question starts (Math AI markscheme)", () => {
+    // Pages: instructions, Q1 starts on 3, continues on 4 with a header, Q2 starts on 4, Q3 on 5 (also continued on 6).
+    const pages = [
+      "Markscheme\nInstructions to Examiners",
+      "1 General\nAward marks using the annotations",
+      "1. (a) 30 A1\n(b) arithmetic formula chosen (M1)",
+      "Question 1 continued\n(e) 1.44% A1\n[Total 15 marks]\n2. (a) (i) 30 A1",
+      "3. (a) 0.95 A1",
+      "Question 3 continued\n(c) 12 A1",
+    ];
+    const m = splitMarkscheme(pages, [1, 2, 3]);
+    expect(m.get(1)).toEqual({ start: 3, end: 4 });
+    expect(m.get(2)).toEqual({ start: 4, end: 4 });
+    expect(m.get(3)).toEqual({ start: 5, end: 6 });
+  });
 });

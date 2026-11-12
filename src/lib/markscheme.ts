@@ -6,14 +6,22 @@ export interface MsStart {
   page: number; // 1-based
   line: number;
   strong: boolean; // "Question 3" / "Pregunta 3" style heading
+  part?: boolean; // "1. (a)" / "1a" style: a real answer row, not a numbered instruction like "1 General"
 }
+
+const HAS_PART = /^\s*\d{1,2}\s*[.)]?\s*\(?[a-h]\)(?:\s|$)|^\s*\d{1,2}[a-h](?:[\s.):]|$)/;
 
 const STRONG = /^\s*(?:question|pregunta|q)\s*(\d{1,2})\b/i;
 // Markscheme table rows often start "1a", "1 a)", "1.a" or "1(a)".
 // A bare number followed by a capitalised word ("3 Map drawn") also counts; a page number alone doesn't.
 const PART = /^\s*(\d{1,2})(?:\s*[.]?\s*\(?[a-h]\)?(?:[\s.):]|$)|\s+(?=[A-ZÁÉÍÓÚÑ]))/;
 
+// "Question 1 continued" / "Pregunta 1 (continuación)" sits at the top of every extra page of a long question.
+// It marks a continuation, never where the question starts.
+const CONTINUED = /\b(continued|cont\.|continuaci[oó]n|contin[uú]a)\b/i;
+
 export function msLineStart(line: string): { number: number; strong: boolean } | null {
+  if (CONTINUED.test(line)) return null;
   const s = line.match(STRONG);
   if (s) {
     const n = Number(s[1]);
@@ -34,7 +42,7 @@ export function msStarts(pages: string[]): MsStart[] {
   pages.forEach((text, pi) =>
     text.split(/\r?\n/).forEach((line, li) => {
       const s = msLineStart(line);
-      if (s) out.push({ ...s, page: pi + 1, line: li });
+      if (s) out.push({ ...s, part: HAS_PART.test(line), page: pi + 1, line: li });
     }),
   );
   return out;
@@ -42,11 +50,12 @@ export function msStarts(pages: string[]): MsStart[] {
 
 /**
  * Picks the longest run of starts that follows the paper's question numbers in order (skipping at most one
- * missing number at a time). On a tie the run spread over more pages wins (numbered instructions at the
- * front sit on one page), then the earlier one.
+ * missing number at a time). On a tie the run with more "1. (a)"-style answer rows wins, then the run spread over
+ * more pages (numbered instructions at the front sit on one page), then the earlier one.
  * "Question N" headings are used alone when they cover at least half of the questions.
  */
 const pagesOf = (run: MsStart[]) => new Set(run.map((s) => s.page)).size;
+const partsOf = (run: MsStart[]) => run.filter((s) => s.part).length;
 
 function bestRun(cands: MsStart[], numbers: number[]): MsStart[] {
   let best: MsStart[] = [];
@@ -61,7 +70,12 @@ function bestRun(cands: MsStart[], numbers: number[]): MsStart[] {
         run.push(cands[j]);
       }
     }
-    if (run.length > best.length || (run.length === best.length && pagesOf(run) > pagesOf(best))) best = run;
+    // Longer run wins; on a tie, the run made of real answer rows ("1. (a)") beats numbered instructions
+    // ("1 General"), then the run spread over more pages.
+    if (
+      run.length > best.length ||
+      (run.length === best.length && (partsOf(run) > partsOf(best) || (partsOf(run) === partsOf(best) && pagesOf(run) > pagesOf(best))))
+    ) best = run;
   }
   return best;
 }

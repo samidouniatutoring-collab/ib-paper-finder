@@ -122,3 +122,15 @@ fieldset.pick { border: 1px solid var(--line); border-radius: 10px; max-height: 
 .ms-editor { margin-bottom: 0.5rem; }
 .badge-offline { background: #f0fdfa; color: #0f766e; }
 .offline-bar { background: #fffbeb; color: #92400e; text-align: center; padding: 0.45rem 1rem; font-size: 0.9rem; border-bottom: 1px solid var(--line); }
+
+/* Full papers: label, markscheme flag and buttons in fixed columns so rows line up. */
+.paper-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 0.75rem; align-items: center; padding: 0.45rem 0; border-bottom: 1px solid var(--line); }
+.paper-row:last-child { border-bottom: 0; }
+.paper-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+.paper-actions .btn { min-width: 9.5rem; text-align: center; }
+.paper-actions .btn-secondary { min-width: 6rem; }
+@media (max-width: 640px) {
+  .paper-row { grid-template-columns: 1fr; }
+  .paper-actions { justify-content: flex-start; }
+}
+.ms-section { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--line); }

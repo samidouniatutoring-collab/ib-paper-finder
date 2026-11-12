@@ -1,13 +1,12 @@
 import { COURSES, inCourse } from "../lib/courses";
-import { loadMyProgress, loadPapers, loadPrereleases, loadSubjectQuestions, paperLabel, type Paper, subjectName, type Progress, type Question } from "../data";
+import { isOwner, loadMyProgress, loadPapers, loadPrereleases, loadSubjectQuestions, paperLabel, type Paper, subjectName, type Progress, type Question } from "../data";
 import { lang, tr } from "../i18n";
 import { pairKey, SUBJECTS, type SubjectId } from "../lib/detect";
-import { confidenceHint } from "../lib/tagger";
+import { confidenceHint, matchLabel } from "../lib/tagger";
 import { TOPIC_MAPS, tagId, type Topic } from "../lib/topics";
 import { practiceBar, selection } from "./practice";
 import { h, spinner } from "../ui";
 import { homeworkBanner } from "./homework";
-import { offlineFiles } from "../offline";
 
 const filters = { subject: "" as string, topic: "" as string, paper: "", from: "", to: "", hideLow: false, mode: "topic" as "topic" | "papers" };
 const cache = new Map<string, Question[]>();
@@ -135,7 +134,7 @@ function questionList(qs: Question[], progress: Map<string, Progress>, topics: T
       sel("paper", tr("Any paper", "Cualquier prueba"), (COURSES[filters.subject as SubjectId]?.papers ?? [1, 2, 3]).map(String)),
       input("from", tr("From year", "Desde")),
       input("to", tr("To year", "Hasta")),
-      h("label", { class: "check" }, low, tr("Hide low-confidence", "Ocultar baja confianza")),
+      h("label", { class: "check" }, low, tr("Hide weak topic matches", "Ocultar encajes débiles")),
     ),
     matches.length
       ? h("ul", { class: "qlist" }, ...matches.map(({ q, tag }) => {
@@ -153,8 +152,8 @@ function questionList(qs: Question[], progress: Map<string, Progress>, topics: T
               h("strong", {}, `${paperLabel(q.papers!)} · ${q.page_level ? tr("page", "pág.") + " " + q.start_page : "Q" + q.label}`),
               h("span", { class: "muted small" }, ` · ${q.marks != null ? `${q.marks} ${tr("marks", "puntos")}` : ""}`),
             ),
-            h("span", { class: `badge conf-${hint}`, title: tr("How sure the tag is", "Seguridad de la etiqueta") }, hint === "owner" ? tr("checked", "revisado") : tr(hint, { high: "alta", medium: "media", low: "baja" }[hint])),
-            offlineFiles.has(q.papers!.storage_path) ? h("span", { class: "badge badge-offline" }, tr("Offline", "Sin conexión")) : "",
+            // Only you see this: how sure the automatic tagger is that the question is on this topic (not difficulty).
+            isOwner() ? h("span", { class: `badge conf-${hint}`, title: tr("How sure the automatic tagging is that this question is on this topic. Not difficulty.", "Seguridad del etiquetado automático de que la pregunta es de este tema. No es la dificultad.") }, tr(matchLabel(hint), matchLabel(hint, true))) : "",
             pr?.done ? h("span", { class: "badge badge-ok" }, pr.score != null ? `✓ ${pr.score}${q.marks ? "/" + q.marks : ""}` : "✓") : "",
             statement ? h("a", { class: "btn btn-small btn-secondary", href: `#/paper/${statement.id}`, target: "_blank", rel: "noopener" }, tr("Open pre-release statement", "Abrir declaración de pre-publicación")) : "",
           );
@@ -179,11 +178,13 @@ async function renderPapers(body: HTMLElement): Promise<void> {
     h("div", { class: "card" }, h("h2", {}, year),
       h("ul", { class: "qlist" }, ...ps
         .sort((a, b) => (a.session ?? "").localeCompare(b.session ?? "") || (a.timezone ?? "").localeCompare(b.timezone ?? "") || (a.paper_number ?? 0) - (b.paper_number ?? 0) || (a.paper_part ?? "").localeCompare(b.paper_part ?? ""))
-        .map((p) => h("li", { class: "row" },
+        .map((p) => h("li", { class: "paper-row" },
           h("strong", {}, paperLabel(p)),
-          withMs.has(pairKey(p)) ? "" : h("span", { class: "badge" }, tr("No markscheme", "Sin esquema")),
-          h("a", { class: "btn btn-small", href: `#/full/${p.id}` }, tr("Exam conditions", "Condiciones de examen")),
-          h("a", { class: "btn btn-small btn-secondary", href: `#/paper/${p.id}` }, tr("Just view", "Solo ver")),
+          h("span", {}, withMs.has(pairKey(p)) ? "" : h("span", { class: "badge" }, tr("No markscheme", "Sin esquema"))),
+          h("span", { class: "paper-actions" },
+            h("a", { class: "btn btn-small", href: `#/full/${p.id}` }, tr("Exam conditions", "Condiciones de examen")),
+            h("a", { class: "btn btn-small btn-secondary", href: `#/paper/${p.id}` }, tr("Just view", "Solo ver")),
+          ),
         ))),
     )));
 }

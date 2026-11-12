@@ -4,7 +4,6 @@ import { tr } from "../i18n";
 import { pairKey, SUBJECTS } from "../lib/detect";
 import { couldMatch, findDuplicates } from "../lib/duplicates";
 import { expandFiles, linkMarkscheme, processFiles, reanalyse, redetect, refreshSearchText, type FileResult } from "../processing";
-import { offlineFiles } from "../offline";
 import { errorText, h, spinner, toast } from "../ui";
 
 export async function libraryView(root: HTMLElement): Promise<void> {
@@ -236,7 +235,6 @@ function paperRow(p: Paper, ms: Paper | undefined, flags: string[], prerelease =
       ms ? h("a", { class: "ms-link", href: `#/paper/${ms.id}` }, tr("Markscheme", "Esquema")) : "",
       prerelease ? h("span", { class: "badge" }, tr("Pre-release", "Pre-publicación")) : "",
       ...flags.map((f) => h("span", { class: "badge badge-warn" }, f)),
-      offlineFiles.has(p.storage_path) ? h("span", { class: "badge badge-offline" }, tr("Available offline", "Disponible sin conexión")) : "",
       isOwner() ? h("div", { class: "small muted" }, p.original_name) : "",
     ),
     isOwner() ? h("div", { class: "row" },

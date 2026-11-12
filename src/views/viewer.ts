@@ -2,7 +2,7 @@ import type { PDFDocumentProxy } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { db, findPrerelease, isOwner, loadPaper, loadQuestion, markschemeFor, saveMarkschemeRange, type MarkschemePart, loadMyProgress, paperLabel, saveProgress, subjectName, watermarkText, type Paper, type Question, type Tag } from "../data";
 import { tr } from "../i18n";
 import type { SubjectId } from "../lib/detect";
-import { confidenceHint } from "../lib/tagger";
+import { confidenceHint, matchLabel } from "../lib/tagger";
 export { markschemeFor } from "../data";
 import { TOPIC_MAPS, findTopic, tagId } from "../lib/topics";
 import { offlineFiles } from "../offline";
@@ -43,6 +43,7 @@ export async function questionView(root: HTMLElement, id: string): Promise<void>
   const [found, pre] = await Promise.all([markschemeFor(q), findPrerelease(paper).catch(() => null)]);
   const left = h("div", { class: "pages" });
   const right = h("div", { class: "pages" });
+  const msSection = h("section", { class: "ms-section" });
   const badge = h("span");
   root.replaceChildren(
     h("p", {}, h("a", { href: "#/" }, `← ${tr("Finder", "Buscador")}`)),
@@ -51,17 +52,20 @@ export async function questionView(root: HTMLElement, id: string): Promise<void>
     pre ? prereleaseButton(pre) : "",
     tagPanel(q),
     await progressPanel(q),
-    h("div", { class: "side-by-side" },
-      h("section", {}, h("h2", {}, tr("Question", "Pregunta")), left),
-      h("section", {}, h("h2", {}, tr("Markscheme", "Esquema")), right),
-    ),
+    h("section", {}, h("h2", {}, tr("Question", "Pregunta")), left),
+    msSection,
   );
-  const width = pageWidth(true);
+  const width = pageWidth(false);
   const doc = await loadPaperDoc(paper.storage_path);
   await renderRange(left, doc, q.start_page, q.end_page, width);
-  await showMarkscheme(right, found, width).catch((e) => right.replaceChildren(h("p", { class: "muted" }, errorText(e))));
-  badge.replaceChildren(offlineBadge(offlineFiles.has(paper.storage_path) && (!found || offlineFiles.has(found.ms.storage_path))));
-  if (isOwner() && found) right.before(msRangeEditor(q, found, right, width));
+  // The markscheme stays hidden until asked for, under the question.
+  const reveal = h("button", { class: "btn" }, tr("Reveal markscheme", "Ver esquema"));
+  reveal.addEventListener("click", async () => {
+    msSection.replaceChildren(h("h2", {}, tr("Markscheme", "Esquema")), right);
+    await showMarkscheme(right, found, width).catch((e) => right.replaceChildren(h("p", { class: "muted" }, errorText(e))));
+    if (isOwner() && found) right.before(msRangeEditor(q, found, right, width));
+  });
+  msSection.replaceChildren(reveal);
 }
 
 /** Link to the pre-release statement of a Paper 1 question. */
@@ -105,8 +109,9 @@ function msRangeEditor(q: Question, part: MarkschemePart, target: HTMLElement, w
   );
 }
 
-export function offlineBadge(on: boolean): HTMLElement | string {
-  return on ? h("span", { class: "badge badge-offline", title: tr("Saved on this device", "Guardado en este dispositivo") }, tr("Available offline", "Disponible sin conexión")) : "";
+/** Offline copies still work; the label was noise, so it's no longer shown. */
+export function offlineBadge(_on: boolean): string {
+  return "";
 }
 
 export async function showMarkscheme(el: HTMLElement, part: MarkschemePart | null, width: number): Promise<void> {
@@ -132,8 +137,8 @@ function tagPanel(q: Question): HTMLElement {
     el.replaceChildren(
       ...tags.map((t) => {
         const topic = findTopic(t.topic);
-        const hint = t.source === "owner" ? tr("checked", "revisado") : tr(confidenceHint(t.confidence), { high: "alta", medium: "media", low: "baja" }[confidenceHint(t.confidence)]);
-        return h("span", { class: "chip" }, topic ? topicName(topic) : t.topic, h("span", { class: "muted small" }, ` · ${hint}`),
+        const k = t.source === "owner" ? "owner" : confidenceHint(t.confidence);
+        return h("span", { class: "chip" }, topic ? topicName(topic) : t.topic, isOwner() ? h("span", { class: "muted small" }, ` · ${tr(matchLabel(k), matchLabel(k, true))}`) : "",
           isOwner() ? h("button", { class: "chip-x", "aria-label": tr("Remove tag", "Quitar etiqueta"), onclick: () => void remove(t) }, "×") : "");
       }),
       !tags.length ? h("span", { class: "muted small" }, tr("No topic tags yet.", "Aún sin temas.")) : "",

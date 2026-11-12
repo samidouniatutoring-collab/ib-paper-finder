@@ -30,6 +30,13 @@ export function confidenceHint(c: number): "high" | "medium" | "low" {
   return c >= 0.75 ? "high" : c >= 0.5 ? "medium" : "low";
 }
 
+/** How sure the automatic tagger is that a question is on a topic (not difficulty). */
+export function matchLabel(hint: "high" | "medium" | "low" | "owner", es = false): string {
+  return es
+    ? { high: "encaje fuerte", medium: "encaje probable", low: "encaje débil", owner: "revisado" }[hint]
+    : { high: "strong match", medium: "likely match", low: "weak match", owner: "checked by you" }[hint];
+}
+
 /**
  * Scores each topic: every distinct keyword found adds 1 (multi-word keywords add 2).
  * Returns up to `max` (default 4) keyword topics (plus any marks-based topics such as SAQ/ERQ).
