@@ -93,12 +93,29 @@ export function splitMarkscheme(pages: string[], questionNumbers: number[]): Map
   const all = msStarts(pages);
   const strong = all.filter((s) => s.strong);
   let run = bestRun(strong, numbers);
-  if (run.length < Math.max(1, Math.ceil(numbers.length / 2))) run = bestRun(all, numbers);
+  // "Question N" headings win only if they cover half the questions and the plain run isn't longer or more
+  // spread out: markband pages list "Question 1: Knowledge…", "Question 2: Application…" all on one page.
+  const plain = bestRun(all, numbers);
+  if (run.length < Math.max(1, Math.ceil(numbers.length / 2)) || plain.length > run.length || pagesOf(plain) > pagesOf(run)) run = plain;
   run.forEach((s, i) => {
     const next = run[i + 1];
     let end = next ? next.page : pages.length;
     if (next && next.line === 0 && next.page > s.page) end = next.page - 1;
     out.set(s.number, { start: s.page, end: Math.max(s.page, end) });
+  });
+  // Multiple-choice answer grids ("1.  A   16.  B"): every number on a grid line is answered on that page.
+  for (const [n, page] of answerGrid(pages)) if (numbers.includes(n) && !out.has(n)) out.set(n, { start: page, end: page });
+  return out;
+}
+
+const GRID_LINE = /^\s*(?:\d{1,2}\s*[.)]?\s+[A-D]\s*)+$/;
+/** Question number → page for multiple-choice answer grids (lines made only of "N. X" pairs). */
+export function answerGrid(pages: string[]): Map<number, number> {
+  const out = new Map<number, number>();
+  pages.forEach((text, pi) => {
+    const lines = text.split(/\r?\n/).filter((l) => GRID_LINE.test(l));
+    if (lines.length < 3) return;
+    for (const l of lines) for (const m of l.matchAll(/(\d{1,2})\s*[.)]?\s+[A-D](?=\s|$)/g)) if (!out.has(Number(m[1]))) out.set(Number(m[1]), pi + 1);
   });
   return out;
 }

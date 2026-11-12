@@ -153,9 +153,11 @@ export async function saveProgress(p: Progress): Promise<void> {
 /** The markscheme that belongs to a paper (same subject, level, year, session, timezone, paper number). */
 function findMarkschemeQuery(p: Paper, kind: Paper["kind"] = "markscheme") {
   let q = db().from("papers").select("*").eq("kind", kind);
-  for (const k of ["subject", "level", "year", "session", "timezone", "paper_number", "paper_part"] as const) {
+  for (const k of ["subject", "level", "year", "session", "paper_number", "paper_part"] as const) {
     q = p[k] == null ? q.is(k, null) : q.eq(k, p[k] as string | number);
   }
+  // No timezone and "TZ0" are the same thing (November papers often have neither printed).
+  q = !p.timezone || p.timezone === "TZ0" ? q.or("timezone.is.null,timezone.eq.TZ0") : q.eq("timezone", p.timezone);
   return q.order("created_at").limit(1);
 }
 

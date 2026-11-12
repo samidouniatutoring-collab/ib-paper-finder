@@ -63,4 +63,25 @@ describe("splitMarkscheme", () => {
     expect(m.get(2)).toEqual({ start: 4, end: 4 });
     expect(m.get(3)).toEqual({ start: 5, end: 6 });
   });
+
+  it("ignores markband 'Question N:' headings that all sit on one page (Psychology Paper 2)", () => {
+    const pages = [
+      "Markscheme",
+      "Question 1: Knowledge and understanding\n0 The work does not reach\nQuestion 2: Application\nQuestion 3: Compare and contrast\nQuestion 4: Design",
+      "Section A\n1.   Describe how you used an interview",
+      "2.   Explain the concept of bias",
+      "3.   Compare and contrast the methodology",
+      "4.   Design an observation",
+      "Section B\n5.   Discuss the following study",
+    ];
+    const m = splitMarkscheme(pages, [1, 2, 3, 4, 5]);
+    expect([...m.values()].map((r) => r.start)).toEqual([3, 4, 5, 6, 7]);
+  });
+  it("reads multiple-choice answer grids in two columns (SEHS Paper 1A)", () => {
+    const grid = Array.from({ length: 15 }, (_, i) => `${i + 1}.    A   ${i + 16}.   B`).join("\n\n");
+    const m = splitMarkscheme(["Markscheme\nPaper 1A", grid], Array.from({ length: 30 }, (_, i) => i + 1));
+    expect(m.size).toBe(30);
+    expect(m.get(16)).toEqual({ start: 2, end: 2 });
+    expect(m.get(30)).toEqual({ start: 2, end: 2 });
+  });
 });
