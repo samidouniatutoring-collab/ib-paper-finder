@@ -55,6 +55,7 @@ export async function peopleView(root: HTMLElement): Promise<void> {
 
   root.replaceChildren(
     h("h1", {}, tr("People", "Personas")),
+    inviteSection(),
     group("pending", tr("Requests", "Solicitudes")),
     group("approved", tr("Approved", "Aprobados")),
     group("removed", tr("Removed", "Quitados")),
@@ -152,4 +153,44 @@ function accessControls(p: Profile): HTMLElement {
   mode.addEventListener("change", () => void save());
   for (const b of boxes) b.box.addEventListener("change", () => void save());
   return h("div", { class: "stack" }, mode, subjectsRow);
+}
+
+/**
+ * Owner: invite someone to the app. Sends the sign-up link by WhatsApp or email (or copy it); once they sign up
+ * they appear under Requests to approve.
+ */
+function inviteSection(): HTMLElement {
+  const link = `${location.origin}${location.pathname}#/signup`;
+  const name = h("input", { type: "text", placeholder: tr("Their first name (optional)", "Su nombre (opcional)"), "aria-label": tr("Name", "Nombre") });
+  const message = () => {
+    const hi = name.value.trim() ? `Hey ${name.value.trim()}, ` : "Hey, ";
+    return tr(
+      `${hi}here's my IB past paper app. Sign up with this link and I'll approve you: ${link}`,
+      `${hi}aquí tienes mi app de exámenes IB. Regístrate con este enlace y te doy acceso: ${link}`,
+    );
+  };
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(message());
+      toast(tr("Invite copied: paste it anywhere", "Invitación copiada: pégala donde quieras"));
+    } catch {
+      prompt(tr("Copy this invite:", "Copia esta invitación:"), message());
+    }
+  };
+  return h("section", { class: "card stack" },
+    h("h2", {}, tr("Invite someone", "Invitar a alguien")),
+    h("p", { class: "small muted" }, tr(
+      "Sends them the sign-up link. When they've signed up they show under Requests: approve them and pick their access.",
+      "Les envía el enlace de registro. Cuando se registren aparecen en Solicitudes: apruébalos y elige su acceso.",
+    )),
+    name,
+    h("div", { class: "row" },
+      h("button", { class: "btn btn-small", onclick: () => window.open(`https://wa.me/?text=${encodeURIComponent(message())}`, "_blank", "noopener") }, "WhatsApp"),
+      h("button", { class: "btn btn-small btn-secondary", onclick: () => { location.href = `mailto:?subject=${encodeURIComponent(tr("IB past paper app", "App de exámenes IB"))}&body=${encodeURIComponent(message())}`; } }, tr("Email", "Email")),
+      h("button", { class: "btn btn-small btn-secondary", onclick: () => void copy() }, tr("Copy invite", "Copiar invitación")),
+    ),
+    state.settings.allowed_domain
+      ? h("p", { class: "small notice" }, tr(`Only @${state.settings.allowed_domain} emails can sign up right now (Settings below).`, `Ahora solo pueden registrarse emails @${state.settings.allowed_domain} (Ajustes abajo).`))
+      : "",
+  );
 }
