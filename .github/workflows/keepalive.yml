@@ -16,6 +16,11 @@ jobs:
           URL: ${{ secrets.VITE_SUPABASE_URL }}
           KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
+          # Secrets pasted with a line break or trailing slash would make the URL invalid.
+          URL=$(printf '%s' "$URL" | tr -d '[:space:]' | sed 's#/*$##')
+          KEY=$(printf '%s' "$KEY" | tr -d '[:space:]')
+          test -n "$URL" || { echo "VITE_SUPABASE_URL secret is empty"; exit 1; }
+          case "$URL" in https://*) ;; *) URL="https://$URL" ;; esac
           code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/rest/v1/app_settings?select=id&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
           echo "Supabase answered $code"
           test "$code" -lt 500
