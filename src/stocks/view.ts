@@ -24,6 +24,12 @@ const sum = (r: M.Valued[], k: "value" | "cost") => r.reduce((a, x) => a + x[k],
 const num = (v: string) => Number(String(v).replace(",", "."));
 const field = (label: string, input: HTMLElement, hint?: string) => h("label", { class: "field" }, label, input, hint ? h("span", { class: "small muted" }, hint) : null);
 const cls = (n: number) => (n >= 0 ? "pos" : "neg");
+/** Today's % change: live quote if available, else last vs previous daily close. */
+function dayChange(x: M.Holding): number | undefined {
+  if (x.quoteSymbol && liveChange[x.quoteSymbol] != null) return liveChange[x.quoteSymbol];
+  const c = x.yahoo ? eod[x.yahoo]?.closes : undefined;
+  return c && c.length >= 2 ? (c[c.length - 1][1] / c[c.length - 2][1] - 1) * 100 : undefined;
+}
 
 export function mount(el: HTMLElement): void {
   root = el;
@@ -98,7 +104,7 @@ function portfolio(b: HTMLElement): void {
         h("button", { class: "btn btn-small", onclick: (e: Event) => { (e.target as HTMLButtonElement).disabled = true; void refresh(); } }, "Refresh prices"))),
     h("div", { class: "kpis" },
       kpi("Value", M.eur(value)), kpi("Cost", M.eur(cost)), kpi("Profit / loss", `${M.eur(value - cost)} (${M.pct(cost ? (value - cost) / cost : 0)})`, value - cost),
-      kpi("12 months: you vs S&P 500", isFinite(myRet) ? `${M.pct(myRet)} vs ${M.pct(spyRet)}` : "needs end-of-day prices", isFinite(myRet) ? myRet - spyRet : undefined),
+      kpi("12 months: you vs S&P 500", isFinite(myRet) ? `${M.pct(myRet)} vs ${M.pct(spyRet)}` : "building up: ~2 weeks of daily prices", isFinite(myRet) ? myRet - spyRet : undefined),
       kpi("Custody / year", M.eur(rows.length ? M.yearlyCustody(rows, S.accounts) : 0))),
   );
   const w = M.warnings(rows);
@@ -118,7 +124,7 @@ function holdingsTable(rows: M.Valued[], total: number): HTMLElement {
       h("td", { class: "small" }, S.accounts.find((a) => a.id === r.h.accountId)?.name ?? ""),
       h("td", {}, r.h.shares), h("td", {}, `${r.h.avgCost.toFixed(2)} ${r.h.currency}`),
       h("td", {}, r.price == null ? h("span", { class: "badge badge-warn" }, "no price") : `${r.price.toFixed(2)} ${r.h.currency}`, r.priceSource === "manual" ? h("span", { class: "badge badge-muted", title: `Entered ${r.h.manualAt ?? ""}` }, "manual") : r.priceSource === "eod" ? h("span", { class: "badge badge-muted", title: "Closing price" }, (r.priceDate ?? "").slice(5)) : r.priceSource === "live" ? h("span", { class: "badge badge-ok" }, "live") : null),
-      h("td", { class: cls(liveChange[r.h.quoteSymbol] ?? 0) }, liveChange[r.h.quoteSymbol] != null ? `${liveChange[r.h.quoteSymbol].toFixed(2)}%` : ""),
+      h("td", { class: cls(dayChange(r.h) ?? 0) }, dayChange(r.h) != null ? `${(dayChange(r.h) as number).toFixed(2)}%` : ""),
       h("td", {}, M.eur(r.value)), h("td", {}, `${((r.value / (total || 1)) * 100).toFixed(1)}%`),
       h("td", { class: cls(r.pl) }, `${M.pct(r.plPct)}`),
       h("td", {}, h("button", { class: "btn btn-ghost btn-small", onclick: () => editHolding(r.h) }, "Edit"))))));
