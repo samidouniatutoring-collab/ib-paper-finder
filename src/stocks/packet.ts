@@ -3,7 +3,7 @@ import { type Account, type State, type Valued, MARKET_LABEL, breakdown, eur, pc
 import type { Earning, Ipo, NewsItem } from "./api";
 
 export interface PacketInput {
-  state: State; rows: Valued[]; cash: number; accountId: string; ideas: string;
+  state: State; rows: Valued[]; scope: string; cash: number; accountId: string; ideas: string;
   news: Record<string, NewsItem[]>; market: NewsItem[]; ipos: Ipo[]; earnings: Earning[]; spyReturn?: number; myReturn?: number;
 }
 
@@ -26,10 +26,11 @@ export function buildPacket(p: PacketInput): string {
   L.push("- Must be buyable at Bankinter (Spanish + main international markets). Say so if an idea isn't available there.");
   L.push(`- Fees per trade at this account: Spain ${eur(tradeFee(acc, "es", Math.min(p.cash, 1999)))}, international ${eur(tradeFee(acc, "us", p.cash))} (Bankinter international is a flat 20€ under 40,000€). Fewer, bigger trades beat many small ones.`);
   L.push("- Custody: 0.04% (Spain) / 0.05% (international) per quarter, **minimum 6€ per stock**, so every extra stock costs at least 24€/year. Dividend collection 0.25–0.30% (min 1.20€). Tobin tax on buys: Spain 0.2%, France 0.4%, Italy 0.1%.");
+  L.push("- Bankinter promoted ETFs (300+ from iShares, Vanguard, Amundi…) can be bought with 0€ commission, and with 'compra periódica' (monthly plan) the 6€ custody minimum is waived: the cheapest way to add money every month at Bankinter. Bróker Cero promo days (Black Friday, Cyber Monday, debut days) make international trades free.");
   L.push("- Diversify away from current concentrations (see warnings). Long-term, slow and steady; no leverage, no options.");
   L.push("", "## Current portfolio");
   L.push(`Value **${eur(total)}**, cost ${eur(cost)}, P/L **${eur(total - cost)} (${pct(cost ? (total - cost) / cost : 0)})**.`);
-  if (p.myReturn != null && p.spyReturn != null) L.push(`Since tracking started: portfolio ${pct(p.myReturn)} vs S&P 500 (SPY) ${pct(p.spyReturn)}.`);
+  if (p.myReturn != null && p.spyReturn != null) L.push(`Current holdings replayed over the last 12 months: ${pct(p.myReturn)} vs S&P 500 ${pct(p.spyReturn)}.`);
   L.push("", "| Account | Stock | Market | Weight | Value | P/L | Sector | Country |", "|---|---|---|---|---|---|---|---|");
   for (const r of [...rows].sort((a, b) => b.value - a.value)) {
     const a = state.accounts.find((x) => x.id === r.h.accountId);

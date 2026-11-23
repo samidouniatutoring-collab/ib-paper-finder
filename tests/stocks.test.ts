@@ -63,3 +63,32 @@ describe("valuation & analysis", () => {
     expect(r[0].quoteSymbol).toBe("AMD");
   });
 });
+
+describe("EOD, plans, import links, backfill", () => {
+  const rates = { EUR: 1, USD: 1.1, GBP: 0.85 };
+  const h0: M.Holding = { id: "x", accountId: "a", ticker: "FRES", name: "Fresnillo", market: "uk", currency: "GBP", shares: 100, avgCost: 10, quoteSymbol: "", quoteCurrency: "GBP", quoteRatio: 1, yahoo: "FRES.L" };
+  const eod: M.Eod = { "FRES.L": { currency: "GBP", last: 12, lastDate: "2026-11-20", closes: [] } };
+  it("uses closing prices when there's no live quote", () => {
+    const v = M.valueHolding(h0, {}, rates, eod);
+    expect(v.priceSource).toBe("eod"); expect(v.price).toBe(12); expect(v.value).toBeCloseTo(1200 / 0.85);
+  });
+  it("plan waives the custody minimum", () => {
+    expect(M.custodyQuarter({ id: "a", name: "", broker: "bankinter", brokerCero: true, otherFee: 0 }, "eu", 1000, true)).toBeCloseTo(0.5);
+  });
+  it("yahoo guesses", () => { expect(M.yahooGuess("clnx", "es")).toBe("CLNX.MC"); expect(M.yahooGuess("amd", "us")).toBe("AMD"); expect(M.yahooGuess("asml", "eu")).toBe(""); });
+  it("import links round-trip and replace per account", () => {
+    const d: M.ImportData = { holdings: [{ ...h0, id: "" }], replace: true };
+    expect(M.decodeImport(M.encodeImport(d)).holdings[0].ticker).toBe("FRES");
+    const st = { ...M.defaultState(), holdings: [{ ...h0, id: "old", accountId: "a" }, { ...h0, id: "keep", accountId: "b" }] };
+    const n = M.applyImport(st, d);
+    expect(n.holdings.map((x) => x.id)).toContain("keep");
+    expect(n.holdings.map((x) => x.id)).not.toContain("old");
+    expect(n.holdings.length).toBe(2);
+  });
+  it("backfill compares with the benchmark", () => {
+    const days = Array.from({ length: 30 }, (_, i) => new Date(Date.now() - (29 - i) * 864e5).toISOString().slice(0, 10));
+    const e: M.Eod = { "^GSPC": { currency: "USD", closes: days.map((d, i) => [d, 100 + i] as [string, number]) }, "FRES.L": { currency: "GBP", closes: days.map((d, i) => [d, 10 + i * 0.5] as [string, number]) } };
+    const r = M.backfill([M.valueHolding(h0, {}, rates, e)], e, rates)!;
+    expect(r.mine[0]).toBeCloseTo(0); expect(r.mine[r.mine.length - 1]).toBeCloseTo(1.45); expect(r.bench[r.bench.length - 1]).toBeCloseTo(0.29);
+  });
+});

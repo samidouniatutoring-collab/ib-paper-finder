@@ -6,3 +6,4 @@ dist
 # Never commit papers
 *.pdf
 *.zip
+public/data/

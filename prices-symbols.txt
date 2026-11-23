@@ -1,0 +1,32 @@
+# End-of-day prices fetched for the Portfolio app (Yahoo Finance symbols). One per line.
+# Indices / benchmarks
+^GSPC
+SPY
+# Current holdings (parents' Bankinter)
+AMD
+NVDA
+MU
+AVGO
+ASML
+ASML.AS
+NVO
+NOVO-B.CO
+AAPL
+MSFT
+NDAQ
+SPGI
+NEE
+CDE
+FCX
+MP
+BHP
+BHP.L
+FRES.L
+NEO.TO
+SU.PA
+CLNX.MC
+MBG.DE
+# Broad ETFs (UCITS, buyable in Europe) for comparisons
+IWDA.AS
+VWCE.DE
+SXR8.DE

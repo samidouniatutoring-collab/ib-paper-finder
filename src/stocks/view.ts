@@ -7,7 +7,10 @@ type Tab = "portfolio" | "invest" | "fees" | "calendar" | "news" | "watch" | "se
 const TABS: [Tab, string][] = [["portfolio", "Portfolio"], ["invest", "Invest €X"], ["fees", "Fees"], ["calendar", "IPOs & earnings"], ["news", "News"], ["watch", "Watchlist"], ["settings", "Settings"]];
 
 let S = M.load();
-let tab: Tab = (location.hash.slice(1) as Tab) || "portfolio";
+const tabOf = (): Tab => { const t = location.hash.slice(1) as Tab; return TABS.some(([k]) => k === t) ? t : "portfolio"; };
+let tab: Tab = tabOf();
+let eod: M.Eod = {};
+let eodUpdated = "";
 let live: Record<string, number> = {};
 let liveChange: Record<string, number> = {};
 let rates: M.Rates = { EUR: 1, USD: 1.08, GBP: 0.85, DKK: 7.46, CHF: 0.94 };
@@ -16,13 +19,32 @@ let lastRefresh = "";
 let root: HTMLElement;
 const persist = () => M.save(S);
 
-const rowsFor = (acc = filter) => S.holdings.filter((x) => acc === "all" || x.accountId === acc).map((x) => M.valueHolding(x, live, rates));
+const rowsFor = (acc = filter) => S.holdings.filter((x) => acc === "all" || x.accountId === acc).map((x) => M.valueHolding(x, live, rates, eod));
 const sum = (r: M.Valued[], k: "value" | "cost") => r.reduce((a, x) => a + x[k], 0);
 const num = (v: string) => Number(String(v).replace(",", "."));
 const field = (label: string, input: HTMLElement, hint?: string) => h("label", { class: "field" }, label, input, hint ? h("span", { class: "small muted" }, hint) : null);
 const cls = (n: number) => (n >= 0 ? "pos" : "neg");
 
-export function mount(el: HTMLElement): void { root = el; window.addEventListener("hashchange", () => { tab = (location.hash.slice(1) as Tab) || "portfolio"; render(); }); render(); if (S.finnhubKey && S.holdings.length) void refresh(true); }
+export function mount(el: HTMLElement): void {
+  root = el;
+  checkImport();
+  window.addEventListener("hashchange", () => { if (!checkImport()) { tab = tabOf(); render(); } });
+  render();
+  void loadEod().then(() => refresh(true));
+}
+function checkImport(): boolean {
+  const m = location.hash.match(/^#import=(.+)$/);
+  if (!m) return false;
+  try {
+    const d = M.decodeImport(m[1]);
+    if (confirm(`Load ${d.holdings.length} holdings into the Portfolio app${d.replace ? " (replacing those accounts)" : ""}?`)) { S = M.applyImport(S, d); persist(); toast(`Loaded ${d.holdings.length} holdings`); }
+  } catch { toast("That import link is broken", true); }
+  history.replaceState(null, "", location.pathname + "#portfolio"); tab = "portfolio"; render();
+  return true;
+}
+async function loadEod(): Promise<void> {
+  try { const r = await fetch(`${import.meta.env.BASE_URL}data/prices.json`, { cache: "no-cache" }); if (r.ok) { const j = await r.json(); eod = j.symbols || {}; eodUpdated = j.updated || ""; } } catch { /* offline */ }
+}
 
 function render(): void {
   const nav = h("nav", { class: "tabs" }, ...TABS.map(([k, l]) => h("a", { href: `#${k}`, class: k === tab ? "active" : "" }, l)));
@@ -35,7 +57,8 @@ function render(): void {
 async function refresh(quiet = false): Promise<void> {
   try {
     rates = await A.fxRates().catch(() => rates);
-    if (!S.finnhubKey) { if (!quiet) toast("Add your Finnhub key in Settings to get live US prices."); render(); return; }
+    if (!quiet) await loadEod();
+    if (!S.finnhubKey) { snapshot(); render(); return; }
     const syms = [...S.holdings.map((x) => x.quoteSymbol), ...S.watch.map((w) => w.symbol), "SPY"];
     const q = await A.quotes(S.finnhubKey, syms);
     live = Object.fromEntries(Object.entries(q).map(([k, v]) => [k, v.c]));
@@ -44,11 +67,7 @@ async function refresh(quiet = false): Promise<void> {
     for (const x of S.holdings) if (x.quoteSymbol && (!x.sector || !x.country)) {
       try { const p = await A.profile(S.finnhubKey, x.quoteSymbol); if (p.finnhubIndustry) x.sector = x.sector || p.finnhubIndustry; if (p.country) x.country = x.country || p.country; if (p.name && x.name === x.ticker) x.name = p.name; } catch { /* skip */ }
     }
-    const all = rowsFor("all");
-    const today = new Date().toISOString().slice(0, 10);
-    const snap: M.Snapshot = { date: today, value: sum(all, "value"), cost: sum(all, "cost"), spy: live.SPY };
-    S.history = [...S.history.filter((x) => x.date !== today), snap].slice(-2000);
-    persist();
+    snapshot();
     lastRefresh = new Date().toLocaleTimeString();
     const hits = S.watch.filter((w) => live[w.symbol] && ((w.above && live[w.symbol] >= w.above) || (w.below && live[w.symbol] <= w.below)));
     if (hits.length) toast(`Price alert: ${hits.map((w) => w.symbol).join(", ")}`);
@@ -56,30 +75,38 @@ async function refresh(quiet = false): Promise<void> {
   } catch (e) { toast(errorText(e), true); }
 }
 
+function snapshot(): void {
+  const all = rowsFor("all"); if (!all.length) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const accounts = Object.fromEntries(S.accounts.map((a) => { const r = rowsFor(a.id); return [a.id, { value: sum(r, "value"), cost: sum(r, "cost") }]; }));
+  const spy = live.SPY ?? eod.SPY?.last;
+  S.history = [...S.history.filter((x) => x.date !== today), { date: today, value: sum(all, "value"), cost: sum(all, "cost"), spy, accounts }].slice(-2000);
+  persist();
+}
+
 // ---------------- Portfolio ----------------
 function portfolio(b: HTMLElement): void {
   const rows = rowsFor();
   const value = sum(rows, "value"), cost = sum(rows, "cost");
-  const first = S.history.find((x) => x.spy), last = S.history[S.history.length - 1];
-  const myRet = first && last && first.cost && last.cost ? (last.value / last.cost) / (first.value / first.cost) - 1 : NaN;
-  const spyRet = first?.spy && last?.spy ? last.spy / first.spy - 1 : NaN;
+  const bf = M.backfill(rows, eod, rates);
+  const myRet = bf ? bf.mine[bf.mine.length - 1] : NaN, spyRet = bf ? bf.bench[bf.bench.length - 1] : NaN;
   const accSel = h("select", { onchange: (e: Event) => { filter = (e.target as HTMLSelectElement).value; render(); } },
     h("option", { value: "all", selected: filter === "all" }, "All accounts"), ...S.accounts.map((a) => h("option", { value: a.id, selected: filter === a.id }, a.name)));
   b.append(
     h("div", { class: "row spread" }, accSel,
-      h("div", { class: "row" }, lastRefresh ? h("span", { class: "small muted" }, `Updated ${lastRefresh}`) : null,
+      h("div", { class: "row" }, h("span", { class: "small muted" }, [eodUpdated ? `Closing prices: ${new Date(eodUpdated).toLocaleDateString()}` : "", lastRefresh ? `Live: ${lastRefresh}` : ""].filter(Boolean).join(" · ")),
         h("button", { class: "btn btn-small", onclick: (e: Event) => { (e.target as HTMLButtonElement).disabled = true; void refresh(); } }, "Refresh prices"))),
     h("div", { class: "kpis" },
       kpi("Value", M.eur(value)), kpi("Cost", M.eur(cost)), kpi("Profit / loss", `${M.eur(value - cost)} (${M.pct(cost ? (value - cost) / cost : 0)})`, value - cost),
-      kpi("You vs S&P 500", isFinite(myRet) ? `${M.pct(myRet)} vs ${M.pct(spyRet)}` : "builds up as you refresh", isFinite(myRet) ? myRet - spyRet : undefined),
-      kpi("Custody / year", M.eur(rowsFor("all").length ? M.yearlyCustody(rowsFor("all"), S.accounts) : 0))),
+      kpi("12 months: you vs S&P 500", isFinite(myRet) ? `${M.pct(myRet)} vs ${M.pct(spyRet)}` : "needs end-of-day prices", isFinite(myRet) ? myRet - spyRet : undefined),
+      kpi("Custody / year", M.eur(rows.length ? M.yearlyCustody(rows, S.accounts) : 0))),
   );
   const w = M.warnings(rows);
   if (w.length) b.append(h("div", { class: "card notice warnbox" }, h("strong", {}, "Concentration warnings"), h("ul", {}, ...w.map((x) => h("li", {}, x)))));
   if (!S.holdings.length) b.append(h("div", { class: "card notice" }, "No holdings yet. Add them below (copy shares and average price from the Bankinter app: Bróker → Mi cartera), or paste a CSV."));
   else b.append(h("div", { class: "card", style: "overflow-x:auto" }, holdingsTable(rows, value)));
   if (rows.length) b.append(h("div", { class: "grid3" }, bars("By sector", M.breakdown(rows, (r) => r.h.sector || "")), bars("By country", M.breakdown(rows, (r) => r.h.country || "")), bars("By currency", M.breakdown(rows, (r) => r.h.currency))));
-  if (S.history.length > 1) b.append(h("div", { class: "card" }, h("h2", {}, "You vs the S&P 500"), chart()));
+  if (bf) b.append(h("div", { class: "card" }, h("h2", {}, "Your current holdings vs the S&P 500, last 12 months"), chart(bf), h("p", { class: "small muted" }, "Replays the stocks you hold today with daily closing prices (ignores when you actually bought or sold).", bf.missing.length ? ` No price history for: ${bf.missing.join(", ")}.` : "")));
   b.append(holdingForm(), csvCard());
 }
 function kpi(label: string, v: string, sign?: number) { return h("div", { class: "kpi" }, h("div", { class: "small muted" }, label), h("div", { class: `kpi-v ${sign == null ? "" : cls(sign)}` }, v)); }
@@ -90,7 +117,7 @@ function holdingsTable(rows: M.Valued[], total: number): HTMLElement {
       h("td", {}, h("strong", {}, r.h.ticker), h("div", { class: "small muted" }, r.h.name !== r.h.ticker ? r.h.name : "", r.h.sector ? ` · ${r.h.sector}` : "")),
       h("td", { class: "small" }, S.accounts.find((a) => a.id === r.h.accountId)?.name ?? ""),
       h("td", {}, r.h.shares), h("td", {}, `${r.h.avgCost.toFixed(2)} ${r.h.currency}`),
-      h("td", {}, r.price == null ? h("span", { class: "badge badge-warn" }, "no price") : `${r.price.toFixed(2)} ${r.h.currency}`, r.priceSource === "manual" ? h("span", { class: "badge badge-muted", title: `Entered ${r.h.manualAt ?? ""}` }, "manual") : null),
+      h("td", {}, r.price == null ? h("span", { class: "badge badge-warn" }, "no price") : `${r.price.toFixed(2)} ${r.h.currency}`, r.priceSource === "manual" ? h("span", { class: "badge badge-muted", title: `Entered ${r.h.manualAt ?? ""}` }, "manual") : r.priceSource === "eod" ? h("span", { class: "badge badge-muted", title: "Closing price" }, (r.priceDate ?? "").slice(5)) : r.priceSource === "live" ? h("span", { class: "badge badge-ok" }, "live") : null),
       h("td", { class: cls(liveChange[r.h.quoteSymbol] ?? 0) }, liveChange[r.h.quoteSymbol] != null ? `${liveChange[r.h.quoteSymbol].toFixed(2)}%` : ""),
       h("td", {}, M.eur(r.value)), h("td", {}, `${((r.value / (total || 1)) * 100).toFixed(1)}%`),
       h("td", { class: cls(r.pl) }, `${M.pct(r.plPct)}`),
@@ -100,12 +127,10 @@ function bars(title: string, s: M.Slice[]): HTMLElement {
   return h("div", { class: "card" }, h("h2", {}, title), ...s.slice(0, 10).map((x) => h("div", { class: "bar" },
     h("span", { class: "bar-l small" }, x.key), h("span", { class: "bar-t" }, h("span", { class: `bar-f${x.pct > 0.25 ? " hot" : ""}`, style: `width:${(x.pct * 100).toFixed(1)}%` })), h("span", { class: "small" }, `${(x.pct * 100).toFixed(0)}%`))));
 }
-function chart(): SVGElement {
-  const pts = S.history.filter((x) => x.cost && x.spy);
+function chart(bf: NonNullable<ReturnType<typeof M.backfill>>): SVGElement {
+  const pts = bf.dates.map((date) => ({ date }));
   const W = 640, H = 200, P = 30;
-  const base = pts[0];
-  const my = pts.map((x) => (x.value / x.cost) / (base.value / base.cost) - 1);
-  const sp = pts.map((x) => (x.spy as number) / (base.spy as number) - 1);
+  const my = bf.mine, sp = bf.bench;
   const lo = Math.min(0, ...my, ...sp), hi = Math.max(0, ...my, ...sp) || 0.01;
   const X = (i: number) => P + (i / Math.max(1, pts.length - 1)) * (W - 2 * P);
   const Y = (v: number) => H - P - ((v - lo) / (hi - lo || 1)) * (H - 2 * P);
@@ -128,7 +153,7 @@ function holdingForm(x?: M.Holding): HTMLElement {
     market: h("select", {}, ...(Object.keys(M.MARKET_LABEL) as M.Market[]).map((k) => h("option", { value: k, selected: k === v.market }, M.MARKET_LABEL[k]))),
     cur: i(v.currency, "text", { placeholder: "USD / EUR / GBP / DKK" }), shares: i(v.shares || "", "number", { step: "any" }), avg: i(v.avgCost || "", "number", { step: "any" }),
     qs: i(v.quoteSymbol, "text", { placeholder: "e.g. AMD, or ASML / NVO for the US listing" }), qc: i(v.quoteCurrency, "text"), qr: i(v.quoteRatio, "number", { step: "any" }),
-    mp: i(v.manualPrice ?? "", "number", { step: "any" }), sector: i(v.sector ?? ""), country: i(v.country ?? "", "text", { placeholder: "US, NL, FR, ES…" }),
+    mp: i(v.manualPrice ?? "", "number", { step: "any" }), sector: i(v.sector ?? ""), yahoo: i(v.yahoo ?? "", "text", { placeholder: "AMD, ASML.AS, FRES.L, CLNX.MC, SU.PA…" }), plan: h("input", { type: "checkbox", checked: !!v.plan }), country: i(v.country ?? "", "text", { placeholder: "US, NL, FR, ES…" }),
   };
   const saveIt = () => {
     const t = (f.ticker as HTMLInputElement).value.trim().toUpperCase();
@@ -137,7 +162,8 @@ function holdingForm(x?: M.Holding): HTMLElement {
       market: (f.market as HTMLSelectElement).value as M.Market, currency: (f.cur as HTMLInputElement).value.trim().toUpperCase() || "USD",
       shares: num((f.shares as HTMLInputElement).value), avgCost: num((f.avg as HTMLInputElement).value),
       quoteSymbol: (f.qs as HTMLInputElement).value.trim().toUpperCase(), quoteCurrency: (f.qc as HTMLInputElement).value.trim().toUpperCase() || "USD", quoteRatio: num((f.qr as HTMLInputElement).value) || 1,
-      sector: (f.sector as HTMLInputElement).value.trim() || undefined, country: (f.country as HTMLInputElement).value.trim() || undefined };
+      sector: (f.sector as HTMLInputElement).value.trim() || undefined, country: (f.country as HTMLInputElement).value.trim() || undefined,
+      yahoo: (f.yahoo as HTMLInputElement).value.trim().toUpperCase() || M.yahooGuess(t, (f.market as HTMLSelectElement).value as M.Market) || undefined, plan: (f.plan as HTMLInputElement).checked };
     const mp = num((f.mp as HTMLInputElement).value);
     if (mp && mp !== v.manualPrice) { n.manualPrice = mp; n.manualAt = new Date().toISOString().slice(0, 10); } else if (!mp) { delete n.manualPrice; delete n.manualAt; }
     S.holdings = [...S.holdings.filter((y) => y.id !== n.id), n]; persist(); toast("Saved"); render();
@@ -147,9 +173,10 @@ function holdingForm(x?: M.Holding): HTMLElement {
     h("div", { class: "form-grid" }, field("Account", f.acc), field("Ticker", f.ticker), field("Name", f.name), field("Market (sets the fee)", f.market),
       field("Currency you paid in", f.cur), field("Shares", f.shares), field("Average cost per share", f.avg, "In that currency, as Bankinter shows it")),
     h("h3", {}, "Price"),
-    h("div", { class: "form-grid" }, field("Live price symbol (US listing)", f.qs, "Free Finnhub = US listings only. European stocks with a US listing (ASML, NVO, BHP) can use it; leave blank to type prices yourself."),
+    h("div", { class: "form-grid" }, field("Closing-price symbol", f.yahoo, "Updated every weekday evening for any market. US: ticker. Madrid .MC · London .L · Paris .PA · Amsterdam .AS · Frankfurt .DE · Copenhagen .CO · Toronto .TO. New symbols are added to the daily list by Claude."),
+      field("Live price symbol (US listing)", f.qs, "Free Finnhub = US listings only. European stocks with a US listing (ASML, NVO, BHP) can use it; leave blank to type prices yourself."),
       field("Live price currency", f.qc), field("Shares per US listing unit", f.qr, "1 for most. BHP's US listing = 2 shares."), field("Or type the price yourself", f.mp, "Use for European/UK-only stocks; refresh it weekly.")),
-    h("h3", {}, "Optional"), h("div", { class: "form-grid" }, field("Sector", f.sector, "Filled automatically for US symbols"), field("Country", f.country)),
+    h("h3", {}, "Optional"), h("div", { class: "form-grid" }, field("Sector", f.sector, "Filled automatically for US symbols"), field("Country", f.country), h("label", { class: "check" }, f.plan, "ETF on Bankinter 'compra periódica' (no 6€ custody minimum)")),
     h("div", { class: "row" }, h("button", { class: "btn", onclick: saveIt }, "Save"), del));
   return card;
 }
@@ -166,13 +193,15 @@ function csvCard(): HTMLElement {
 function invest(b: HTMLElement): void {
   const cash = h("input", { type: "number", value: 500, step: "any" });
   const acc = h("select", {}, ...S.accounts.map((a) => h("option", { value: a.id, selected: a.id === "mine" }, a.name)));
+  const scope = h("select", {}, h("option", { value: "all" }, "All portfolios together"), ...S.accounts.map((a) => h("option", { value: a.id }, `${a.name} only`)));
   const ideas = h("textarea", { rows: 3, placeholder: "Optional: anything you're thinking about (a stock you heard of, a sector, 'I want less in chips'…)" });
   const out = h("div", { class: "stack" });
   const go = async (btn: HTMLButtonElement) => {
     btn.disabled = true; out.replaceChildren(h("p", { class: "muted" }, "Collecting prices, news, IPOs and earnings… (about 30 s)"));
     try {
       if (S.finnhubKey) await refresh(true);
-      const rows = rowsFor("all");
+      const sc = (scope as HTMLSelectElement).value;
+      const rows = rowsFor(sc);
       const news: Record<string, A.NewsItem[]> = {};
       let market: A.NewsItem[] = [], ipos: A.Ipo[] = [], earn: A.Earning[] = [];
       if (S.finnhubKey) {
@@ -182,9 +211,9 @@ function invest(b: HTMLElement): void {
         ipos = await A.ipoCalendar(S.finnhubKey).catch(() => []);
         earn = await A.earnings(S.finnhubKey).catch(() => []);
       }
-      const first = S.history.find((x) => x.spy), last = S.history[S.history.length - 1];
-      const md = buildPacket({ state: S, rows, cash: num((cash as HTMLInputElement).value), accountId: (acc as HTMLSelectElement).value, ideas: (ideas as HTMLTextAreaElement).value, news, market, ipos, earnings: earn,
-        myReturn: first && last && first !== last ? (last.value / last.cost) / (first.value / first.cost) - 1 : undefined, spyReturn: first?.spy && last?.spy && first !== last ? last.spy / first.spy - 1 : undefined });
+      const bf = M.backfill(rows, eod, rates);
+      const md = buildPacket({ state: S, rows, scope: sc === "all" ? "All portfolios" : `${S.accounts.find((a) => a.id === sc)?.name} only`, cash: num((cash as HTMLInputElement).value), accountId: (acc as HTMLSelectElement).value, ideas: (ideas as HTMLTextAreaElement).value, news, market, ipos, earnings: earn,
+        myReturn: bf ? bf.mine[bf.mine.length - 1] : undefined, spyReturn: bf ? bf.bench[bf.bench.length - 1] : undefined });
       const name = `Portfolio_packet_${new Date().toISOString().slice(0, 10)}.md`;
       out.replaceChildren(
         h("div", { class: "card notice stack" }, h("strong", {}, "Packet ready"), h("span", {}, "Download it (or copy it) and send it to Claude in your finance chat. It uses your normal Claude plan, no extra cost."),
@@ -198,7 +227,7 @@ function invest(b: HTMLElement): void {
   };
   b.append(h("div", { class: "card stack" }, h("h2", {}, "I have money to invest"),
     h("p", { class: "small muted" }, "The app gathers your portfolio, concentration, fees, news on your stocks, upcoming earnings and IPOs into one file. Claude then gives you 3–5 options with pros, cons and fee cost. You decide."),
-    h("div", { class: "form-grid" }, field("Amount (€)", cash), field("Into account", acc)), field("Your ideas (optional)", ideas),
+    h("div", { class: "form-grid" }, field("Amount (€)", cash), field("Into account", acc), field("Analyse", scope, "Your own portfolio, your parents', or both")), field("Your ideas (optional)", ideas),
     h("button", { class: "btn", onclick: (e: Event) => void go(e.target as HTMLButtonElement) }, "Build packet")), out);
 }
 
@@ -209,20 +238,23 @@ function fees(b: HTMLElement): void {
   const amt = h("input", { type: "number", value: 1000, step: "any" });
   const country = h("input", { placeholder: "FR, IT, ES… (for Tobin tax)" });
   const promo = h("input", { type: "checkbox" });
+  const etf = h("input", { type: "checkbox" });
   const out = h("div", {});
   const calc = () => {
     const a = S.accounts.find((x) => x.id === (acc as HTMLSelectElement).value) as M.Account;
     const m = (market as HTMLSelectElement).value as M.Market; const x = num((amt as HTMLInputElement).value);
-    const fee = M.tradeFee(a, m, x, (promo as HTMLInputElement).checked); const tax = M.buyTax((country as HTMLInputElement).value, m, x);
-    const cust = M.custodyQuarter(a, m, x) * 4;
+    const isEtf = (etf as HTMLInputElement).checked;
+    const fee = M.tradeFee(a, m, x, (promo as HTMLInputElement).checked); const buyFee = isEtf ? 0 : fee; const tax = isEtf ? 0 : M.buyTax((country as HTMLInputElement).value, m, x);
+    const cust = M.custodyQuarter(a, m, x, isEtf) * 4;
     out.replaceChildren(h("table", { class: "progress-table" },
-      h("tr", {}, h("td", {}, "Commission (buy or sell)"), h("td", {}, `${M.eur(fee)} (${((fee / x) * 100).toFixed(2)}%)`)),
+      h("tr", {}, h("td", {}, "Commission to buy"), h("td", {}, `${M.eur(buyFee)} (${((buyFee / x) * 100).toFixed(2)}%)`)),
+      h("tr", {}, h("td", {}, "Commission to sell"), h("td", {}, `${M.eur(fee)} (${((fee / x) * 100).toFixed(2)}%)`)),
       h("tr", {}, h("td", {}, "Tobin tax (buying only)"), h("td", {}, M.eur(tax))),
-      h("tr", {}, h("td", {}, h("strong", {}, "Buy now + sell later")), h("td", {}, h("strong", {}, `${M.eur(2 * fee + tax)} (${(((2 * fee + tax) / x) * 100).toFixed(2)}%)`))),
+      h("tr", {}, h("td", {}, h("strong", {}, "Buy now + sell later")), h("td", {}, h("strong", {}, `${M.eur(buyFee + fee + tax)} (${(((buyFee + fee + tax) / x) * 100).toFixed(2)}%)`))),
       h("tr", {}, h("td", {}, "Custody per year for this stock"), h("td", {}, `${M.eur(cust)} (${((cust / x) * 100).toFixed(2)}%/yr)`)),
       h("tr", {}, h("td", { class: "small muted", colspan: 2 }, "Plus Bankinter's margin when converting € ↔ $ / £ (not published). Spanish stocks with Bróker Cero: 0€ commission."))));
   };
-  [acc, market, amt, country, promo].forEach((e) => e.addEventListener("input", calc)); calc();
+  [acc, market, amt, country, promo, etf].forEach((e) => e.addEventListener("input", calc)); calc();
   const intl = [100, 250, 500, 1000, 2500, 5000, 10000].map((x) => h("tr", {}, h("td", {}, M.eur(x)), h("td", {}, `${((20 / x) * 100).toFixed(1)}%`), h("td", {}, `${((40 / x) * 100).toFixed(1)}%`), h("td", {}, `${((Math.max(6, x * 0.0005) * 4 / x) * 100).toFixed(2)}%`)));
   const all = rowsFor("all");
   const sellAll = all.reduce((t, r) => { const a = S.accounts.find((z) => z.id === r.h.accountId) as M.Account; return t + M.tradeFee(a, r.h.market, r.value); }, 0);
@@ -230,7 +262,8 @@ function fees(b: HTMLElement): void {
   b.append(
     h("div", { class: "card stack" }, h("h2", {}, "Fee calculator (Bankinter tariff)"),
       h("div", { class: "form-grid" }, field("Account", acc), field("Market", market), field("Amount (€)", amt), field("Company country", country)),
-      h("label", { class: "check" }, promo, "Free-trading promo day (Bróker Cero only: Black Friday, Cyber Monday, debut days…)"), out),
+      h("label", { class: "check" }, promo, "Free-trading promo day (Bróker Cero only: Black Friday, Cyber Monday, debut days…)"),
+      h("label", { class: "check" }, etf, "Promoted ETF bought with 'compra periódica' (0€ to buy, no 6€ custody minimum)"), out),
     h("div", { class: "card" }, h("h2", {}, "Why small international buys hurt"),
       h("table", { class: "progress-table" }, h("thead", {}, h("tr", {}, ...["Buy size", "Fee to buy (20€)", "Buy + sell", "Custody per year"].map((x) => h("th", {}, x)))), h("tbody", {}, ...intl)),
       h("p", { class: "small muted" }, "Custody is 0.05% a quarter per international stock but at least 6€ per stock, so a 500€ position pays 24€ a year (4.8%). Fewer, bigger positions at Bankinter; small monthly buys are cheaper at a low-cost broker.")),

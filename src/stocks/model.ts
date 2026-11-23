@@ -10,9 +10,17 @@ export interface Holding {
   manualPrice?: number; manualAt?: string;    // price in `currency`
   sector?: string; country?: string;
   boughtAt?: string;
+  yahoo?: string;                            // end-of-day symbol (Yahoo format: ASML.AS, FRES.L, CLNX.MC…)
+  plan?: boolean;                             // ETF with Bankinter 'compra periódica' active: no 6€ custody minimum
+}
+export interface EodSym { currency: string; name?: string; last?: number; lastDate?: string; closes: [string, number][]; }
+export type Eod = Record<string, EodSym>;
+export function yahooGuess(ticker: string, market: Market): string {
+  const t = ticker.toUpperCase();
+  return market === "us" ? t : market === "es" ? `${t}.MC` : market === "uk" ? `${t}.L` : "";
 }
 export interface Watch { symbol: string; above?: number; below?: number; note?: string; }
-export interface Snapshot { date: string; value: number; cost: number; spy?: number; }
+export interface Snapshot { date: string; value: number; cost: number; spy?: number; accounts?: Record<string, { value: number; cost: number }>; }
 export interface Profile { goal: string; horizon: string; monthly: number; notes: string; }
 export interface State {
   accounts: Account[]; holdings: Holding[]; watch: Watch[]; history: Snapshot[];
@@ -26,7 +34,7 @@ export function defaultState(): State {
   return {
     accounts: [
       { id: "parents", name: "Parents' Bankinter", broker: "bankinter", brokerCero: false, otherFee: 0 },
-      { id: "mine", name: "My Bankinter", broker: "bankinter", brokerCero: false, otherFee: 0 },
+      { id: "mine", name: "My Bankinter", broker: "bankinter", brokerCero: true, otherFee: 0 },
     ],
     holdings: [], watch: [], history: [], finnhubKey: "",
     profile: { goal: "Beat the S&P 500 over the long run (aim 10–15% a year)", horizon: "5+ years, buy and hold", monthly: 200, notes: "" },
@@ -64,9 +72,10 @@ export function buyTax(country: string | undefined, market: Market, amountEur: n
   return 0;
 }
 /** Custody per quarter for one stock: 0.04% (Spain) / 0.05% (international), minimum 6€ per stock. */
-export function custodyQuarter(acc: Account, market: Market, valueEur: number): number {
+export function custodyQuarter(acc: Account, market: Market, valueEur: number, plan = false): number {
   if (acc.broker === "other" || valueEur <= 0) return 0;
-  return Math.max(6, valueEur * (market === "es" ? 0.0004 : 0.0005));
+  const v = valueEur * (market === "es" ? 0.0004 : 0.0005);
+  return plan ? v : Math.max(6, v);
 }
 export function dividendFee(acc: Account, market: Market, dividendEur: number): number {
   if (acc.broker === "other") return 0;
@@ -77,18 +86,18 @@ export function dividendFee(acc: Account, market: Market, dividendEur: number): 
 export type Rates = Record<string, number>; // units of currency per 1 EUR
 export const toEur = (amount: number, cur: string, rates: Rates): number => (cur === "EUR" ? amount : amount / (rates[cur] || NaN));
 
-export interface Valued { h: Holding; price: number | null; priceSource: "live" | "manual" | "none"; value: number; cost: number; pl: number; plPct: number; }
-export function valueHolding(h: Holding, live: Record<string, number>, rates: Rates): Valued {
-  let price: number | null = null; let src: Valued["priceSource"] = "none";
+export interface Valued { h: Holding; price: number | null; priceSource: "live" | "eod" | "manual" | "none"; priceDate?: string; value: number; cost: number; pl: number; plPct: number; }
+const convert = (x: number, from: string, to: string, rates: Rates) => (from === to ? x : toEur(x, from, rates) * (to === "EUR" ? 1 : rates[to] || NaN));
+export function valueHolding(h: Holding, live: Record<string, number>, rates: Rates, eod: Eod = {}): Valued {
+  let price: number | null = null; let src: Valued["priceSource"] = "none"; let date: string | undefined;
   const q = h.quoteSymbol && live[h.quoteSymbol];
-  if (q) {
-    const inQuote = q * (h.quoteRatio || 1);
-    price = h.quoteCurrency === h.currency ? inQuote : toEur(inQuote, h.quoteCurrency, rates) * (h.currency === "EUR" ? 1 : rates[h.currency] || NaN);
-    src = "live";
-  } else if (h.manualPrice) { price = h.manualPrice; src = "manual"; }
+  const e = h.yahoo ? eod[h.yahoo] : undefined;
+  if (q) { price = convert(q * (h.quoteRatio || 1), h.quoteCurrency, h.currency, rates); src = "live"; }
+  else if (e?.last) { price = convert(e.last, e.currency, h.currency, rates); src = "eod"; date = e.lastDate; }
+  else if (h.manualPrice) { price = h.manualPrice; src = "manual"; date = h.manualAt; }
   const cost = toEur(h.shares * h.avgCost, h.currency, rates);
   const value = price == null ? cost : toEur(h.shares * price, h.currency, rates);
-  return { h, price, priceSource: src, value, cost, pl: value - cost, plPct: cost ? (value - cost) / cost : 0 };
+  return { h, price, priceSource: src, priceDate: date, value, cost, pl: value - cost, plPct: cost ? (value - cost) / cost : 0 };
 }
 
 export interface Slice { key: string; value: number; pct: number; }
@@ -107,7 +116,7 @@ export function warnings(rows: Valued[]): string[] {
 }
 /** Total yearly custody if each stock pays its own 6€ minimum. */
 export function yearlyCustody(rows: Valued[], accounts: Account[]): number {
-  return rows.reduce((a, r) => { const acc = accounts.find((x) => x.id === r.h.accountId); return a + (acc ? custodyQuarter(acc, r.h.market, r.value) * 4 : 0); }, 0);
+  return rows.reduce((a, r) => { const acc = accounts.find((x) => x.id === r.h.accountId); return a + (acc ? custodyQuarter(acc, r.h.market, r.value, r.h.plan) * 4 : 0); }, 0);
 }
 
 // ---------- CSV import: ticker,shares,avgCost,currency,market[,quoteSymbol,name] ----------
@@ -121,10 +130,52 @@ export function parseCsv(text: string, accountId: string): Holding[] {
     const market = (["es", "us", "eu", "uk", "other"].includes(c[4]) ? c[4] : "us") as Market;
     const cur = (c[3] || "USD").toUpperCase();
     out.push({ id: newId(), accountId, ticker: c[0].toUpperCase(), name: c[6] || c[0].toUpperCase(), market, currency: cur, shares, avgCost: avg,
-      quoteSymbol: c[5] !== undefined ? c[5].toUpperCase() : market === "us" ? c[0].toUpperCase() : "", quoteCurrency: market === "us" ? "USD" : cur, quoteRatio: 1 });
+      quoteSymbol: c[5] !== undefined ? c[5].toUpperCase() : market === "us" ? c[0].toUpperCase() : "", quoteCurrency: market === "us" ? "USD" : cur, quoteRatio: 1,
+      yahoo: c[7] ? c[7].toUpperCase() : yahooGuess(c[0], market) || undefined });
   }
   return out;
 }
 
 export const eur = (n: number): string => (isFinite(n) ? n.toLocaleString("en-GB", { style: "currency", currency: "EUR", maximumFractionDigits: n < 100 ? 2 : 0 }) : "–");
 export const pct = (n: number): string => (isFinite(n) ? `${n >= 0 ? "+" : ""}${(n * 100).toFixed(1)}%` : "–");
+
+/** Today's holdings replayed over the last `days` using end-of-day closes (today's FX), vs a benchmark. */
+export function backfill(rows: Valued[], eod: Eod, rates: Rates, bench = "^GSPC", days = 365): { dates: string[]; mine: number[]; bench: number[]; missing: string[] } | null {
+  const b = eod[bench]; if (!b || b.closes.length < 10) return null;
+  const start = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
+  const dates = b.closes.map((c) => c[0]).filter((d) => d >= start);
+  const missing: string[] = []; const series: { sh: number; cur: string; map: Map<string, number> }[] = [];
+  for (const r of rows) {
+    const e = r.h.yahoo ? eod[r.h.yahoo] : undefined;
+    if (!e || e.closes.length < 10) { missing.push(r.h.ticker); continue; }
+    series.push({ sh: r.h.shares, cur: e.currency, map: new Map(e.closes) });
+  }
+  if (!series.length) return null;
+  const last: number[] = series.map(() => NaN);
+  const vals = dates.map((d) => series.reduce((tot, s, i) => { const c = s.map.get(d); if (c != null) last[i] = c; return tot + (isFinite(last[i]) ? toEur(s.sh * last[i], s.cur, rates) : 0); }, 0));
+  // start the comparison from the first day every series has a price
+  const firstFull = dates.findIndex((d) => series.every((s) => [...s.map.keys()].some((k) => k <= d)));
+  const i0 = Math.max(0, firstFull);
+  const bm = new Map(b.closes);
+  return { dates: dates.slice(i0), mine: vals.slice(i0).map((v) => v / vals[i0] - 1), bench: dates.slice(i0).map((d) => (bm.get(d) as number) / (bm.get(dates[i0]) as number) - 1), missing };
+}
+
+/** One-click import links: stocks.html#import=<base64url JSON {accounts?, holdings, watch?}>. The hash never reaches a server. */
+export interface ImportData { accounts?: Account[]; holdings: Holding[]; watch?: Watch[]; replace?: boolean; }
+export function encodeImport(d: ImportData): string {
+  const b = btoa(unescape(encodeURIComponent(JSON.stringify(d))));
+  return b.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+export function decodeImport(s: string): ImportData {
+  const b = s.replace(/-/g, "+").replace(/_/g, "/");
+  return JSON.parse(decodeURIComponent(escape(atob(b + "=".repeat((4 - (b.length % 4)) % 4)))));
+}
+export function applyImport(st: State, d: ImportData): State {
+  const accounts = [...st.accounts];
+  for (const a of d.accounts ?? []) { const i = accounts.findIndex((x) => x.id === a.id); if (i >= 0) accounts[i] = { ...accounts[i], ...a }; else accounts.push(a); }
+  const touched = new Set(d.holdings.map((x) => x.accountId));
+  const keep = d.replace ? st.holdings.filter((x) => !touched.has(x.accountId)) : st.holdings;
+  const holdings = [...keep, ...d.holdings.map((x) => ({ ...x, id: x.id || newId() }))];
+  const watch = [...st.watch]; for (const w of d.watch ?? []) if (!watch.some((x) => x.symbol === w.symbol)) watch.push(w);
+  return { ...st, accounts, holdings, watch };
+}

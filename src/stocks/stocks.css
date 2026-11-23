@@ -18,3 +18,4 @@ body:has(main.stocks) { --accent: #5b21b6; --accent-soft: #f3efff; }
 .stocks details summary { cursor: pointer; }
 .stocks .packet { white-space: pre-wrap; font-size: .8rem; max-height: 60vh; overflow: auto; }
 .stocks .acc { border-top: 1px solid var(--line); padding-top: .75rem; align-items: end; }
+.stocks .chart { max-height: 280px; }
