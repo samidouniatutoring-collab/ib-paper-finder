@@ -107,3 +107,12 @@ The tests cover file name detection, question splitting, markscheme splitting (m
 Each subject has one JSON file in `src/lib/topics/`. Each topic has a `code`, `name`, `group` and `keywords`. Optional fields: `nameEs`, `papers` (only tag on these paper numbers), `level`, and `marks` [min, max] (tag by marks, e.g. Psychology SAQ/ERQ). After editing, push to `main`. To re-tag existing papers, open Library → Edit → tick "Re-split and re-tag".
 
 **Check against the current subject guides before relying on them**, especially SEHS (new guide; first exams 2026) and Psychology (the new guide changes the structure for exams from 2027; the list follows the approaches / options / HL extensions / SAQ–ERQ structure you asked for).
+
+## Portfolio (stocks.html)
+
+A separate installable app for tracking a share portfolio. Everything is stored in the browser (localStorage); nothing goes to Supabase.
+
+- Live US prices, company news, IPO and earnings calendars from Finnhub's free plan (your own key, saved only in the browser). European/UK-only stocks: use their US listing if they have one, or type the price.
+- Exchange rates from the ECB (frankfurter.dev, no key).
+- Bankinter fee calculator (commission, Tobin tax, custody with the 6€-per-stock minimum), concentration warnings, sector/country/currency breakdown, a daily snapshot history compared with SPY.
+- "Invest €X" builds a Markdown packet (portfolio, constraints, fees, news, earnings, IPOs) to send to Claude in a chat, so there's no API cost.

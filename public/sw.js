@@ -2,7 +2,7 @@
 // Papers are NOT cached here: the app keeps copies of papers you've opened in IndexedDB (src/offline.ts),
 // only for approved users, and wipes them on logout or when access is removed.
 // The Supabase API and signed file URLs are never cached by this worker (other origin).
-const CACHE = "paper-finder-v3";
+const CACHE = "paper-finder-v4";
 const SHELL = new URL("./", self.location.href).href;
 
 self.addEventListener("install", (e) => {
@@ -23,7 +23,7 @@ self.addEventListener("fetch", (e) => {
     e.respondWith(
       fetch(e.request)
         // Each page (Paper Finder, Transcriber) is saved under its own address.
-        .then((r) => { if (r.ok) { const copy = r.clone(); const key = url.pathname.endsWith("/transcribe.html") ? url.href.split("#")[0].split("?")[0] : SHELL; caches.open(CACHE).then((c) => c.put(key, copy)); } return r; })
+        .then((r) => { if (r.ok) { const copy = r.clone(); const key = /\/(transcribe|stocks)\.html$/.test(url.pathname) ? url.href.split("#")[0].split("?")[0] : SHELL; caches.open(CACHE).then((c) => c.put(key, copy)); } return r; })
         .catch(async () => (await caches.match(url.href.split("#")[0].split("?")[0])) || (await caches.match(SHELL)) || new Response("<p style='font-family:system-ui;padding:2rem'>You're offline. Open IB Paper Finder once with a connection first.</p>", { headers: { "Content-Type": "text/html" } })),
     );
   }

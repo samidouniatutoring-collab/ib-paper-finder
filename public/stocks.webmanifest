@@ -1,0 +1,16 @@
+{
+  "name": "Portfolio",
+  "short_name": "Portfolio",
+  "description": "Portfolio tracker: live US prices, fees, concentration, IPOs and earnings, analysis packets for Claude.",
+  "id": "/ib-paper-finder/stocks.html",
+  "start_url": "/ib-paper-finder/stocks.html",
+  "scope": "/ib-paper-finder/stocks.html",
+  "display": "standalone",
+  "background_color": "#f7f7f4",
+  "theme_color": "#5b21b6",
+  "icons": [
+    { "src": "stocks-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "stocks-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "stocks-icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

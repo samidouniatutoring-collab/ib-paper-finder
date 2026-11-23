@@ -7,8 +7,8 @@ export default defineConfig({
   build: {
     target: "es2022",
     chunkSizeWarningLimit: 1500,
-    // Two pages: the Paper Finder app and the standalone transcriber.
-    rollupOptions: { input: { main: "index.html", transcribe: "transcribe.html" } },
+    // Three pages: Paper Finder, the standalone Transcriber and the Portfolio tracker.
+    rollupOptions: { input: { main: "index.html", transcribe: "transcribe.html", stocks: "stocks.html" } },
   },
   test: { include: ["tests/**/*.test.ts"] },
 });
