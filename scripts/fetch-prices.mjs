@@ -23,7 +23,7 @@ function parseCsv(t) {
 
 let ok = 0;
 try {
-  const r = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET}/export?format=csv&gid=0`);
+  const r = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET}/export?format=csv&gid=1402242450`);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const rows = parseCsv(await r.text()).slice(1);
   const today = new Date().toISOString().slice(0, 10);
