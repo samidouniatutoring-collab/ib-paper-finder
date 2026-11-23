@@ -16,6 +16,7 @@ import { practiceModeView } from "./views/practice-mode";
 import { progressView } from "./views/progress";
 import { searchBox, searchView } from "./views/search";
 import { paperView, questionView } from "./views/viewer";
+import { transcriberView } from "./transcribe/view";
 
 const app = document.getElementById("app")!;
 let recovering = false;
@@ -24,7 +25,7 @@ function header(signedIn: boolean): HTMLElement {
   const links: [string, string][] = signedIn && state.profile?.status === "approved"
     ? homeworkOnly()
       ? [["#/homework", tr("Homework", "Deberes")], ["#/progress", tr("Progress", "Progreso")]]
-      : [["#/homework", tr("Homework", "Deberes")], ["#/", tr("Finder", "Buscador")], ["#/practice", tr("Practice", "Práctica")], ["#/library", tr("Library", "Biblioteca")], ["#/progress", tr("Progress", "Progreso")], ...(isOwner() ? [["#/marking", tr("Marking", "Corregir")] as [string, string], ["#/people", tr("People", "Personas")] as [string, string]] : [])]
+      : [["#/homework", tr("Homework", "Deberes")], ["#/", tr("Finder", "Buscador")], ["#/practice", tr("Practice", "Práctica")], ["#/library", tr("Library", "Biblioteca")], ["#/progress", tr("Progress", "Progreso")], ["#/oral", tr("Oral", "Oral")], ...(isOwner() ? [["#/marking", tr("Marking", "Corregir")] as [string, string], ["#/people", tr("People", "Personas")] as [string, string]] : [])]
     : [];
   return h("header", { class: "top" },
     h("a", { class: "brand", href: "#/" }, "IB Paper Finder"),
@@ -112,6 +113,10 @@ async function route(): Promise<void> {
     else if (section === "practice") await practiceModeView(main);
     else if (section === "library") await libraryView(main);
     else if (section === "progress") await progressView(main);
+    else if (section === "oral") {
+      transcriberView(main, { oralFirst: true });
+      main.append(h("p", { class: "small muted" }, tr("Also available on its own, without logging in: ", "También disponible por separado, sin iniciar sesión: "), h("a", { href: "./transcribe.html" }, tr("Transcriber", "Transcriptor"))));
+    }
     else if (section === "people" && isOwner()) await peopleView(main);
     else if (section === "marking" && isOwner()) await markingView(main, id);
     else if (section === "q" && id) await questionView(main, id);

@@ -27,7 +27,27 @@ It runs on GitHub Pages (static files) with a separate Supabase project for logi
 8. **Practice mode.** Practice → pick a subject, any topics (none = all) and optionally a paper and level → a random question you haven't done, with a countdown from its marks (1.5 minutes per mark by default) → **Show markscheme** → score yourself → saved to your progress → next question. Tick "Include questions I've already done" to see those too. The owner changes the timer in People → Settings with a small JSON, e.g. `{"minutesPerMark": 1.5, "subjects": {"math-ai": 1.2}}` (subject ids: business, math-ai, psychology, sehs, spanish-b, english-a-ll).
 9. **Exact markscheme jump.** When a paper and its markscheme are both in the library, the markscheme is split by the paper's question numbers and each question's markscheme pages are stored. "Show markscheme" (question page, practice mode, homework, practice-set PDFs) opens on that question's part; if it wasn't found, the whole markscheme is shown. On a question page the owner sees "Markscheme pages: x – y" to correct the mapping by hand (kept from then on; "Reset to automatic" undoes it). For papers added before this existed, click Library → Library tools → **Match markscheme pages for all papers** once.
 10. **Offline.** The app itself is saved on the device, and every paper and markscheme you open is kept on that device (IndexedDB), with its details, so it opens again without internet; those show an **Available offline** badge (Finder, Library, question pages). Offline, a yellow bar says so, and anything not opened before says it needs a connection. Saving progress or homework needs a connection. The copies are deleted when you log out, when someone else signs in on the device, and when your access is removed (the next time the app opens with a connection, or the moment a file is refused).
-11. English/Spanish switch (top right). Works in Safari and Chrome on Mac and iPad.
+11. **Oral tab / Transcriber:** see "Transcriber and oral grading" below.
+12. English/Spanish switch (top right). Works in Safari and Chrome on Mac and iPad.
+
+## Transcriber and oral grading
+
+Two ways in, same code (`src/transcribe/`):
+
+- **Standalone Transcriber:** `https://<user>.github.io/ib-paper-finder/transcribe.html`. No login. For anything: orals, university interviews, lectures. Can be added to the Dock / Home Screen like the main app.
+- **Oral tab in Paper Finder** (`#/oral`): the same screen with oral options first (Spanish B SL individual oral by default).
+
+What it does:
+
+1. **Verbatim transcript** in Spanish, English and French with **speakers separated** (Google Gemini speech model, `VERBATIM` mode: fillers, repetitions, false starts and grammar mistakes are kept). Fallback engine: Gemini Flash with strict verbatim instructions (no word times).
+2. **Audio measurements**, worked out in the browser from the sound wave: words per minute, pauses (count, long ones, longest), fillers, immediate repetitions, and pitch movement in semitones (flat vs expressive intonation), per speaker.
+3. **Pronunciation & intonation notes** (optional): a second request asks Gemini to list moments where pronunciation differs from a native accent. Observations only, no marks.
+4. **Grading packet** (`.md`): recording details, automatic Part 1 timing, measurements, notes and the full transcript. Attach or paste it in Claude and say "grade this oral": the **ib-oral-grader** skill grades it against the IB criteria. Gemini never grades.
+5. Exports: transcript as `.txt` or Word (Arial). Finished transcripts (text and numbers, never audio) are kept in that browser only; the uploaded audio is deleted from Google straight after.
+
+Setup: each person gets a free key at aistudio.google.com → Get API key and pastes it in Settings. The key stays in that browser. **Privacy:** on Google's free tier, Google may use uploaded content to improve its products. Recordings with other people in them (e.g. a teacher) are uploaded to Google, so only upload what you're allowed to.
+
+Limits: up to 30 minutes per file with speaker labels; video files are converted to audio in the browser first. If a model name stops working, change it in Settings → Advanced.
 
 ## Setup (in this order)
 
