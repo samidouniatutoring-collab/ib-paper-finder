@@ -1,3 +1,4 @@
+# Symbols now live in the Google Sheet 'Portfolio app – daily prices (auto)' (column A = app symbol, B = Google symbol).
 # End-of-day prices fetched for the Portfolio app (Yahoo Finance symbols). One per line.
 # Indices / benchmarks
 ^GSPC

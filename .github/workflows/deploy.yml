@@ -7,7 +7,7 @@ on:
   schedule:
     - cron: "20 22 * * 1-5" # weekdays after the US close: refresh end-of-day prices
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 concurrency:
@@ -24,8 +24,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - name: End-of-day prices for the Portfolio app
-        run: node scripts/fetch-prices.mjs || echo "price fetch failed, continuing"
+      - name: End-of-day prices for the Portfolio app (Google Sheet → history on the data branch)
+        run: |
+          git fetch origin data --depth=1 2>/dev/null && git show origin/data:history.json > /tmp/history.json 2>/dev/null || echo '{}' > /tmp/history.json
+          node scripts/fetch-prices.mjs /tmp/history.json || echo "price fetch failed, continuing"
+          mkdir -p /tmp/datab && cd /tmp/datab && git init -q && cp /tmp/history.json . && git add history.json \
+            && git -c user.name=prices-bot -c user.email=prices-bot@users.noreply.github.com commit -qm "prices $(date -u +%F)" \
+            && git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:data || echo "history not saved"
       - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
