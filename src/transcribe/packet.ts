@@ -56,9 +56,11 @@ export function transcriptText(job: Job, withTimes = true): string {
 const band = (v: number, cuts: [number, string][], last: string) => { for (const [c, l] of cuts) if (v < c) return l; return last; };
 
 /** Plain-words reading of the numbers, so the grader (and the student) don't have to interpret raw values. */
-export function describeSpeaker(m: SpeakerMetrics, solo: boolean): string[] {
+export function describeSpeaker(m: SpeakerMetrics, solo: boolean, graded = true): string[] {
   const out: string[] = [];
-  out.push(`Pace: ${m.wpm} words/min including pauses, ${m.articulationWpm} words/min of actual speech (${band(m.wpm, [[80, "slow, hesitant"], [110, "steady but careful"], [150, "fluent conversational pace"], [190, "fast"]], "very fast")} for a learner).`);
+  // The learner scale only makes sense for the person being graded (an examiner is usually a native speaker).
+  const pace = graded ? ` (${band(m.wpm, [[80, "slow, hesitant"], [110, "steady but careful"], [150, "fluent conversational pace"], [190, "fast"]], "very fast")} for a learner)` : "";
+  out.push(`Pace: ${m.wpm} words/min including pauses, ${m.articulationWpm} words/min of actual speech${pace}.`);
   out.push(`Pauses inside their own turns: ${m.pauses} (≥0.4 s), of which ${m.longPauses} long (≥1.5 s); average ${m.meanPauseSec} s, longest ${m.longestPauseSec} s.`);
   out.push(`Fillers (eh/ehm/euh/um…): ${m.fillers} (${m.fillersPerMin}/min)${Object.keys(m.fillerWords).length ? ` → ${Object.entries(m.fillerWords).map(([w, n]) => `"${w}"×${n}`).join(", ")}` : ""}. Immediate repetitions ("el el"): ${m.repetitions}.`);
   if (m.pitch) out.push(`Pitch: median ${m.pitch.medianHz} Hz, range ${m.pitch.rangeSemitones} semitones (10th–90th pct), variation SD ${m.pitch.sdSemitones} st → ${band(m.pitch.sdSemitones, [[1.5, "quite flat / monotone"], [2.5, "moderate movement"], [4.5, "lively, expressive"]], "very wide")} intonation. (Measured, not judged by ear.)`);
@@ -100,7 +102,7 @@ export function buildPacket(job: Job): string {
     lines.push("## Audio measurements");
     for (const m of job.analysis.speakers) {
       lines.push(`### ${nameOf(job, m.speaker)}${m.speaker === cand ? " (graded)" : ""}`);
-      for (const l of describeSpeaker(m, solo)) lines.push(`- ${l}`);
+      for (const l of describeSpeaker(m, solo, m.speaker === cand)) lines.push(`- ${l}`);
       lines.push("");
     }
     if (job.analysis.noiseFloorDb > -45) lines.push("_Note: noisy recording; pause counts may be slightly under-counted._\n");

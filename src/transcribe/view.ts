@@ -206,7 +206,7 @@ function resultView(job: Job, back: () => void): HTMLElement {
     h("span", { class: "mono muted" }, `[${clock(s.start)}] `), h("strong", {}, `${nameOf(job, s.speaker)}: `), s.text)));
   const drawMetrics = () => metricsBox.replaceChildren(...(job.analysis?.speakers ?? []).map((m) => h("div", { class: "metric" },
     h("h3", {}, nameOf(job, m.speaker), m.speaker === job.candidate ? h("span", { class: "badge" }, tr("graded", "evaluado")) : ""),
-    h("ul", { class: "small" }, ...describeSpeaker(m, job.purpose === "solo").map((l) => h("li", {}, l))))));
+    h("ul", { class: "small" }, ...describeSpeaker(m, job.purpose === "solo", m.speaker === job.candidate).map((l) => h("li", {}, l))))));
 
   const nameInputs = speakers.map((spk) => {
     const inp = h("input", { value: nameOf(job, spk), style: "width: 11rem" });

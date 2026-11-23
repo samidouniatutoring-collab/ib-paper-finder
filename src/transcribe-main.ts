@@ -19,3 +19,8 @@ function render(): void {
   transcriberView(main, { oralFirst: false });
 }
 render();
+
+// Same offline shell as Paper Finder, so it opens like an app from the Dock.
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => undefined);
+}
