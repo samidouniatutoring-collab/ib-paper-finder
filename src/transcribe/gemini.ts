@@ -29,6 +29,34 @@ export function loadSettings(): EngineSettings {
 
 export function saveSettings(s: EngineSettings): void {
   try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* ignore */ }
+  void idb("put", JSON.stringify(s));
+  // Ask the browser not to clear this site's storage (Safari otherwise may).
+  try { void navigator.storage?.persist?.(); } catch { /* ignore */ }
+}
+
+/** Second copy of the settings in IndexedDB, so the key survives if the browser drops localStorage. */
+function idb(op: "get" | "put", value?: string): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.open("transcriber", 1);
+      req.onupgradeneeded = () => req.result.createObjectStore("kv");
+      req.onerror = () => resolve(undefined);
+      req.onsuccess = () => {
+        const tx = req.result.transaction("kv", op === "get" ? "readonly" : "readwrite");
+        const st = tx.objectStore("kv");
+        const r = op === "get" ? st.get(KEY) : st.put(value, KEY);
+        r.onsuccess = () => resolve(op === "get" ? (r.result as string | undefined) : value);
+        r.onerror = () => resolve(undefined);
+      };
+    } catch { resolve(undefined); }
+  });
+}
+/** If localStorage lost the key but IndexedDB still has it, restore it. Returns true if something was restored. */
+export async function restoreSettings(): Promise<boolean> {
+  if (loadSettings().apiKey) { void idb("put", JSON.stringify(loadSettings())); return false; }
+  const raw = await idb("get");
+  if (!raw) return false;
+  try { const s = JSON.parse(raw) as EngineSettings; if (!s.apiKey) return false; localStorage.setItem(KEY, raw); return true; } catch { return false; }
 }
 
 /** "1.250s" → 1.25 */

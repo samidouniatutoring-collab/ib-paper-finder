@@ -5,7 +5,7 @@ import { tr } from "../i18n";
 import { errorText, h, toast } from "../ui";
 import { analyse, frameDb, percentile, voiceActivity, yinPitch, encodeWav } from "./acoustics";
 import { decodeFile, tick } from "./audio";
-import { friendlyError, loadSettings, mimeFor, pronunciationNotes, removeUpload, saveSettings, transcribeFlash, transcribeSpeech, upload, type EngineSettings } from "./gemini";
+import { friendlyError, restoreSettings, loadSettings, mimeFor, pronunciationNotes, removeUpload, saveSettings, transcribeFlash, transcribeSpeech, upload, type EngineSettings } from "./gemini";
 import { deleteJob, loadHistory, saveJob } from "./history";
 import { PURPOSES, SUBJECTS, buildPacket, clock, describeSpeaker, guessCandidate, nameOf, safeName, transcriptDocx, transcriptText } from "./packet";
 import type { Job, Purpose } from "./types";
@@ -62,6 +62,7 @@ function settingsSlot(): HTMLElement {
 }
 
 export function transcriberView(root: HTMLElement, opts: Opts): void {
+  void restoreSettings().then((restored) => { if (restored) render(); });
   const render = () => {
     root.replaceChildren(
       h("h1", {}, opts.oralFirst ? tr("Oral grading", "Corregir orales") : tr("Transcriber", "Transcriptor")),
