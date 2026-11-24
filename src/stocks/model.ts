@@ -47,7 +47,53 @@ export function load(): State {
     return { ...defaultState(), ...(JSON.parse(raw) as Partial<State>) };
   } catch { return defaultState(); }
 }
-export function save(s: State): void { localStorage.setItem(KEY, JSON.stringify(s)); }
+export function save(s: State): void {
+  const raw = JSON.stringify(s);
+  try { localStorage.setItem(KEY, raw); } catch { /* full or blocked: the IndexedDB copy still saves */ }
+  void idb("put", raw);
+  // Ask the browser not to clear this site's storage (Safari otherwise may).
+  try { void navigator.storage?.persist?.(); } catch { /* ignore */ }
+}
+
+/** Second copy of everything (holdings, accounts, history and the Finnhub key) in IndexedDB,
+ *  so the portfolio survives if the browser drops localStorage. Same fix as the Transcriber. */
+function idb(op: "get" | "put", value?: string): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.open("portfolio-app", 1);
+      req.onupgradeneeded = () => req.result.createObjectStore("kv");
+      req.onerror = () => resolve(undefined);
+      req.onsuccess = () => {
+        const tx = req.result.transaction("kv", op === "get" ? "readonly" : "readwrite");
+        const st = tx.objectStore("kv");
+        const r = op === "get" ? st.get(KEY) : st.put(value, KEY);
+        r.onsuccess = () => resolve(op === "get" ? (r.result as string | undefined) : value);
+        r.onerror = () => resolve(undefined);
+      };
+    } catch { resolve(undefined); }
+  });
+}
+const hasData = (s: Partial<State>): boolean => !!(s.finnhubKey || s.holdings?.length || s.watch?.length || s.history?.length);
+/** On start: if localStorage lost the portfolio or the key but IndexedDB still has them, bring them back.
+ *  Returns the restored state, or null if nothing needed restoring. */
+export async function restore(): Promise<State | null> {
+  let cur: Partial<State> = {};
+  try { cur = JSON.parse(localStorage.getItem(KEY) || "{}") as Partial<State>; } catch { /* ignore */ }
+  const raw = await idb("get");
+  let saved: Partial<State> = {};
+  try { saved = raw ? (JSON.parse(raw) as Partial<State>) : {}; } catch { /* ignore */ }
+  if (!hasData(saved)) { if (hasData(cur)) void idb("put", JSON.stringify(cur)); return null; }
+  const merged: State = { ...defaultState(), ...saved, ...cur };
+  // Fill whatever localStorage lost from the IndexedDB copy.
+  if (!cur.finnhubKey && saved.finnhubKey) merged.finnhubKey = saved.finnhubKey;
+  if (!cur.holdings?.length && saved.holdings?.length) { merged.holdings = saved.holdings; merged.accounts = saved.accounts ?? merged.accounts; }
+  if (!cur.history?.length && saved.history?.length) merged.history = saved.history;
+  if (!cur.watch?.length && saved.watch?.length) merged.watch = saved.watch;
+  if (JSON.stringify(merged) === JSON.stringify({ ...defaultState(), ...cur })) return null;
+  try { localStorage.setItem(KEY, JSON.stringify(merged)); } catch { /* ignore */ }
+  void idb("put", JSON.stringify(merged));
+  return merged;
+}
 
 // ---------- Bankinter fees (published tariff, Nov 2026) ----------
 export const MARKET_LABEL: Record<Market, string> = { es: "Spain (Mercado Continuo)", us: "USA", eu: "Europe (Paris, Frankfurt, Amsterdam…)", uk: "UK (London)", other: "Other international" };

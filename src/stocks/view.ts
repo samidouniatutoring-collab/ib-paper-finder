@@ -36,7 +36,7 @@ export function mount(el: HTMLElement): void {
   checkImport();
   window.addEventListener("hashchange", () => { if (!checkImport()) { tab = tabOf(); render(); } });
   render();
-  void loadEod().then(() => refresh(true));
+  void M.restore().then((r) => { if (r) { S = r; toast("Restored your saved portfolio"); render(); } }).finally(() => { void loadEod().then(() => refresh(true)); });
 }
 function checkImport(): boolean {
   const m = location.hash.match(/^#import=(.+)$/);
