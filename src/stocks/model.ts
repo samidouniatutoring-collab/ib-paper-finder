@@ -33,18 +33,23 @@ export const newId = (): string => Math.random().toString(36).slice(2, 10);
 export function defaultState(): State {
   return {
     accounts: [
-      { id: "parents", name: "Parents' Bankinter", broker: "bankinter", brokerCero: false, otherFee: 0 },
-      { id: "mine", name: "My Bankinter", broker: "bankinter", brokerCero: true, otherFee: 0 },
+      { id: "mine", name: "My portfolio", broker: "bankinter", brokerCero: true, otherFee: 0 },
+      { id: "parents", name: "Parents' portfolio", broker: "bankinter", brokerCero: false, otherFee: 0 },
     ],
     holdings: [], watch: [], history: [], finnhubKey: "",
     profile: { goal: "Beat the S&P 500 over the long run (aim 10–15% a year)", horizon: "5+ years, buy and hold", monthly: 200, notes: "" },
   };
 }
+/** Old default account names → new ones (names you typed yourself are left alone). */
+const RENAMED: Record<string, string> = { "Parents' Bankinter": "Parents' portfolio", "My Bankinter": "My portfolio" };
+export function renameAccounts(s: State): State {
+  return { ...s, accounts: s.accounts.map((a) => (RENAMED[a.name] ? { ...a, name: RENAMED[a.name] } : a)) };
+}
 export function load(): State {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaultState();
-    return { ...defaultState(), ...(JSON.parse(raw) as Partial<State>) };
+    return renameAccounts({ ...defaultState(), ...(JSON.parse(raw) as Partial<State>) });
   } catch { return defaultState(); }
 }
 export function save(s: State): void {
@@ -90,6 +95,7 @@ export async function restore(): Promise<State | null> {
   if (!cur.history?.length && saved.history?.length) merged.history = saved.history;
   if (!cur.watch?.length && saved.watch?.length) merged.watch = saved.watch;
   if (JSON.stringify(merged) === JSON.stringify({ ...defaultState(), ...cur })) return null;
+  Object.assign(merged, renameAccounts(merged));
   try { localStorage.setItem(KEY, JSON.stringify(merged)); } catch { /* ignore */ }
   void idb("put", JSON.stringify(merged));
   return merged;
