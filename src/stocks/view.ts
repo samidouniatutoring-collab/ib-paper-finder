@@ -43,7 +43,7 @@ function checkImport(): boolean {
   if (!m) return false;
   try {
     const d = M.decodeImport(m[1]);
-    if (confirm(`Load ${d.holdings.length} holdings into the Portfolio app${d.replace ? " (replacing those accounts)" : ""}?`)) { S = M.applyImport(S, d); persist(); toast(`Loaded ${d.holdings.length} holdings`); }
+    if (confirm(`Load ${d.holdings.length} holdings into the Portfolio app${d.replace ? " (replacing those accounts)" : ""}?`)) { S = M.renameAccounts(M.applyImport(S, d)); persist(); toast(`Loaded ${d.holdings.length} holdings`); }
   } catch { toast("That import link is broken", true); }
   history.replaceState(null, "", location.pathname + "#portfolio"); tab = "portfolio"; render();
   return true;
@@ -346,12 +346,12 @@ function settings(b: HTMLElement): void {
         return h("div", { class: "row" }, inp, h("button", { class: "btn", onclick: () => {
           const v = (inp as HTMLInputElement).value.trim(); const code = v.includes("#import=") ? v.split("#import=")[1] : v;
           if (!code) return toast("Paste the link first", true);
-          try { const d = M.decodeImport(code); if (confirm(`Load ${d.holdings.length} holdings${d.replace ? " (replacing those accounts)" : ""}?`)) { S = M.applyImport(S, d); persist(); toast(`Loaded ${d.holdings.length} holdings`); location.hash = "#portfolio"; } }
+          try { const d = M.decodeImport(code); if (confirm(`Load ${d.holdings.length} holdings${d.replace ? " (replacing those accounts)" : ""}?`)) { S = M.renameAccounts(M.applyImport(S, d)); persist(); toast(`Loaded ${d.holdings.length} holdings`); location.hash = "#portfolio"; } }
           catch { toast("That import link is broken", true); } } }, "Load")); })()),
     h("div", { class: "card stack" }, h("h2", {}, "Backup"), h("p", { class: "small muted" }, "Everything lives in this browser. Download a backup now and then (and to move to another device)."),
       h("div", { class: "row" },
         h("button", { class: "btn btn-secondary", onclick: () => { const { finnhubKey: _k, ...rest } = S; const a = h("a", { href: URL.createObjectURL(new Blob([JSON.stringify(rest, null, 1)], { type: "application/json" })), download: `portfolio-backup-${new Date().toISOString().slice(0, 10)}.json` }); a.click(); } }, "Download backup"),
-        h("label", { class: "btn btn-secondary" }, "Restore backup", h("input", { type: "file", accept: ".json", style: "display:none", onchange: async (e: Event) => { const f = (e.target as HTMLInputElement).files?.[0]; if (!f) return; try { const d = JSON.parse(await f.text()); S = { ...M.defaultState(), ...d, finnhubKey: S.finnhubKey }; persist(); toast("Restored"); render(); } catch { toast("Not a valid backup", true); } } })))));
+        h("label", { class: "btn btn-secondary" }, "Restore backup", h("input", { type: "file", accept: ".json", style: "display:none", onchange: async (e: Event) => { const f = (e.target as HTMLInputElement).files?.[0]; if (!f) return; try { const d = JSON.parse(await f.text()); S = M.renameAccounts({ ...M.defaultState(), ...d, finnhubKey: S.finnhubKey }); persist(); toast("Restored"); render(); } catch { toast("Not a valid backup", true); } } })))));
 }
 function accountRow(a: M.Account): HTMLElement {
   const name = h("input", { value: a.name }); const broker = h("select", {}, h("option", { value: "bankinter", selected: a.broker === "bankinter" }, "Bankinter"), h("option", { value: "other", selected: a.broker === "other" }, "Other broker (flat fee)"));
