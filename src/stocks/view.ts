@@ -340,6 +340,14 @@ function settings(b: HTMLElement): void {
       h("button", { class: "btn", onclick: () => { S.profile = { goal: (goal as HTMLInputElement).value, horizon: (hor as HTMLInputElement).value, monthly: num((mon as HTMLInputElement).value), notes: (notes as HTMLTextAreaElement).value }; persist(); toast("Saved"); } }, "Save profile")),
     h("div", { class: "card stack" }, h("h2", {}, "Accounts"), ...S.accounts.map(accountRow),
       h("button", { class: "btn btn-secondary", onclick: () => { S.accounts.push({ id: M.newId(), name: "New account", broker: "other", brokerCero: false, otherFee: 1 }); persist(); render(); } }, "Add account")),
+    h("div", { class: "card stack" }, h("h2", {}, "Paste an import link"),
+      h("p", { class: "small muted" }, "For the Dock / Home Screen app, which has no address bar: paste the whole import link Claude gave you (or just the part after #import=)."),
+      (() => { const inp = h("input", { placeholder: "https://…/stocks.html#import=…", autocomplete: "off" });
+        return h("div", { class: "row" }, inp, h("button", { class: "btn", onclick: () => {
+          const v = (inp as HTMLInputElement).value.trim(); const code = v.includes("#import=") ? v.split("#import=")[1] : v;
+          if (!code) return toast("Paste the link first", true);
+          try { const d = M.decodeImport(code); if (confirm(`Load ${d.holdings.length} holdings${d.replace ? " (replacing those accounts)" : ""}?`)) { S = M.applyImport(S, d); persist(); toast(`Loaded ${d.holdings.length} holdings`); location.hash = "#portfolio"; } }
+          catch { toast("That import link is broken", true); } } }, "Load")); })()),
     h("div", { class: "card stack" }, h("h2", {}, "Backup"), h("p", { class: "small muted" }, "Everything lives in this browser. Download a backup now and then (and to move to another device)."),
       h("div", { class: "row" },
         h("button", { class: "btn btn-secondary", onclick: () => { const { finnhubKey: _k, ...rest } = S; const a = h("a", { href: URL.createObjectURL(new Blob([JSON.stringify(rest, null, 1)], { type: "application/json" })), download: `portfolio-backup-${new Date().toISOString().slice(0, 10)}.json` }); a.click(); } }, "Download backup"),
